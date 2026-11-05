@@ -5,7 +5,7 @@ import com.siao.appleoverload.machine.AppleMachineBlockEntity;
 import com.siao.appleoverload.machine.MachineKind;
 import com.siao.appleoverload.recipe.CompressionIndex;
 import com.siao.appleoverload.recipe.SiaoCompressionRecipe;
-import com.siao.appleoverload.upgrade.UpgradeKind;
+import com.siao.appleoverload.upgrade.SiaoUpgrades;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceLocation;
@@ -274,7 +274,7 @@ public final class SiaoSelfTest {
             fast.getItemHandler().insertItem(slot, new ItemStack(Items.IRON_INGOT), false);
         }
         fast.getItemHandler().insertItem(fast.machineKind().upgradeStart(),
-                new ItemStack(SiaoItems.upgrade(UpgradeKind.SPEED).get()), false);
+                new ItemStack(SiaoItems.upgrade(SiaoUpgrades.SPEED).get()), false);
         fillEnergy(fast);
         for (int tick = 0; tick < 25; tick++) {
             fast.tick();
@@ -286,7 +286,7 @@ public final class SiaoSelfTest {
         // 能量升级：等级 1 → 单次 200 → 160 FE
         AppleMachineBlockEntity eco = place(server, MachineKind.COMPRESSOR, new BlockPos(4, 200, 0));
         eco.getItemHandler().insertItem(eco.machineKind().upgradeStart(),
-                new ItemStack(SiaoItems.upgrade(UpgradeKind.ENERGY).get()), false);
+                new ItemStack(SiaoItems.upgrade(SiaoUpgrades.ENERGY).get()), false);
         check("能量升级：单次耗能 200 → 160", eco.energyPerOperation() == 160,
                 eco.energyPerOperation() + " FE");
 
@@ -301,7 +301,7 @@ public final class SiaoSelfTest {
         check("附魔台：产出附魔一重压缩铁锭", SiaoComponents.isEnchanted(enchanted), describe(enchanted));
         check("附魔台：附魔强度 = 1", SiaoComponents.enchantTier(enchanted) == 1, describe(enchanted));
 
-        // 离心机：附魔 3 级 → 3 个奇点碎片
+        // 离心机：附魔单位 → 同阶普通单位（解附魔），不再产碎片
         AppleMachineBlockEntity centrifuge = place(server, MachineKind.CENTRIFUGE, new BlockPos(8, 200, 0));
         ItemStack enchantedUnit2 = unit2.copy();
         SiaoComponents.makeEnchanted(enchantedUnit2, 3);
@@ -310,9 +310,22 @@ public final class SiaoSelfTest {
         for (int tick = 0; tick < 100; tick++) {
             centrifuge.tick();
         }
-        ItemStack shards = centrifuge.getItemHandler().getStackInSlot(centrifuge.machineKind().outputStart());
-        check("离心机：附魔 3 级 → 3 个奇点碎片",
-                sameItem(shards, shard) && shards.getCount() == 3, describe(shards));
+        ItemStack purified = centrifuge.getItemHandler().getStackInSlot(centrifuge.machineKind().outputStart());
+        check("离心机：附魔单位 → 同阶普通单位",
+                sameItem(purified, unit2) && !SiaoComponents.isEnchanted(purified), describe(purified));
+        check("离心机：不再产出奇点碎片",
+                !sameItem(purified, shard), describe(purified));
+
+        // 离心机：混沌苹果 → 1 个奇点碎片
+        AppleMachineBlockEntity chaos = place(server, MachineKind.CENTRIFUGE, new BlockPos(9, 200, 0));
+        chaos.getItemHandler().insertItem(0, new ItemStack(SiaoItems.chaosApple().get()), false);
+        fillEnergy(chaos);
+        for (int tick = 0; tick < 100; tick++) {
+            chaos.tick();
+        }
+        ItemStack fromChaos = chaos.getItemHandler().getStackInSlot(chaos.machineKind().outputStart());
+        check("离心机：混沌苹果 → 1 个奇点碎片",
+                sameItem(fromChaos, shard) && fromChaos.getCount() == 1, describe(fromChaos));
 
         AppleMachineBlockEntity idle = place(server, MachineKind.CENTRIFUGE, new BlockPos(10, 200, 0));
         idle.getItemHandler().insertItem(0, unit1.copy(), false);

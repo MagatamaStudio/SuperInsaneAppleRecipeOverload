@@ -2,16 +2,18 @@ package com.siao.appleoverload.content;
 
 import com.siao.appleoverload.SiaoMod;
 import com.siao.appleoverload.upgrade.SiaoUpgradeItem;
-import com.siao.appleoverload.upgrade.UpgradeKind;
+import com.siao.appleoverload.upgrade.SiaoUpgrades;
+import com.siao.appleoverload.upgrade.UpgradeType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.registries.DeferredBlock;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,7 +29,7 @@ public final class SiaoItems {
     private static final Map<String, DeferredItem<Item>> UNITS = new LinkedHashMap<>();
     private static final Map<String, DeferredItem<Item>> RAW_UNITS = new LinkedHashMap<>();
     private static final Map<String, DeferredItem<BlockItem>> BLOCK_ITEMS = new LinkedHashMap<>();
-    private static final Map<UpgradeKind, DeferredItem<SiaoUpgradeItem>> UPGRADES = new EnumMap<>(UpgradeKind.class);
+    private static final Map<ResourceLocation, DeferredItem<SiaoUpgradeItem>> UPGRADES = new LinkedHashMap<>();
 
     /** 奇点碎片：离心机从附魔压缩单位里回收出来的东西。 */
     public static final DeferredItem<Item> SINGULARITY_SHARD =
@@ -54,10 +56,21 @@ public final class SiaoItems {
             }
         }
 
-        for (UpgradeKind kind : UpgradeKind.values()) {
-            UPGRADES.put(kind, ITEMS.registerItem(kind.id() + "_upgrade",
-                    properties -> new SiaoUpgradeItem(kind, properties)));
-        }
+        registerUpgrade(SiaoUpgrades.SPEED);
+        registerUpgrade(SiaoUpgrades.ENERGY);
+        registerUpgrade(SiaoUpgrades.PARALLEL);
+        registerUpgrade(SiaoUpgrades.ANCHOR);
+        registerUpgrade(SiaoUpgrades.OVERCLOCK);
+        registerUpgrade(SiaoUpgrades.QUANTUM);
+        registerUpgrade(SiaoUpgrades.FISSION);
+    }
+
+    private static DeferredItem<SiaoUpgradeItem> registerUpgrade(DeferredHolder<UpgradeType, UpgradeType> type) {
+        DeferredItem<SiaoUpgradeItem> item = ITEMS.registerItem(
+                type.getId().getPath() + "_upgrade",
+                properties -> new SiaoUpgradeItem(type, properties));
+        UPGRADES.put(type.getId(), item);
+        return item;
     }
 
     private SiaoItems() {
@@ -102,8 +115,8 @@ public final class SiaoItems {
         return RAW_UNITS.size();
     }
 
-    public static DeferredItem<SiaoUpgradeItem> upgrade(UpgradeKind kind) {
-        return UPGRADES.get(kind);
+    public static DeferredItem<SiaoUpgradeItem> upgrade(DeferredHolder<UpgradeType, UpgradeType> type) {
+        return UPGRADES.get(type.getId());
     }
 
     public static Collection<DeferredItem<SiaoUpgradeItem>> upgrades() {

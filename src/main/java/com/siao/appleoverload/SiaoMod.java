@@ -10,6 +10,7 @@ import com.siao.appleoverload.machine.MachineKind;
 import com.siao.appleoverload.machine.SiaoMachineRegistry;
 import com.siao.appleoverload.client.SiaoClientEvents;
 import com.siao.appleoverload.recipe.SiaoRecipes;
+import com.siao.appleoverload.upgrade.SiaoUpgrades;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -39,6 +40,10 @@ public final class SiaoMod {
         SiaoRecipes.SERIALIZERS.register(modBus);
         SiaoMachineRegistry.BLOCK_ENTITIES.register(modBus);
         SiaoMachineRegistry.MENUS.register(modBus);
+
+        // 升级类型是自建注册表：先建表（NewRegistryEvent），再注册条目
+        modBus.addListener(SiaoUpgrades::onNewRegistry);
+        SiaoUpgrades.TYPES.register(modBus);
 
         modBus.addListener(SiaoCommonEvents::registerCapabilities);
 

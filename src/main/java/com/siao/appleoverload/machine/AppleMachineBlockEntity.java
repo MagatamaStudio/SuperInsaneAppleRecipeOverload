@@ -6,8 +6,10 @@ import com.siao.appleoverload.content.SiaoCompressedItem;
 import com.siao.appleoverload.content.SiaoItems;
 import com.siao.appleoverload.recipe.CompressionIndex;
 import com.siao.appleoverload.recipe.SiaoCompressionRecipe;
+import com.siao.appleoverload.upgrade.MachineStat;
 import com.siao.appleoverload.upgrade.SiaoUpgradeItem;
-import com.siao.appleoverload.upgrade.UpgradeKind;
+import com.siao.appleoverload.upgrade.SiaoUpgrades;
+import com.siao.appleoverload.upgrade.UpgradeType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -147,11 +149,11 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
             updateAnchor();
         }
 
-        int speed = levelOf(UpgradeKind.SPEED);
+        int speed = statLevel(MachineStat.SPEED);
         int needed = Math.max(1, machineKind.baseTicks() >> Math.min(speed, 16));
         this.maxProgress = needed;
 
-        int budget = 1 + levelOf(UpgradeKind.PARALLEL);
+        int budget = 1 + statLevel(MachineStat.PARALLEL);
         progress += 1 << Math.min(speed, 16);
 
         int operations = 0;
@@ -231,22 +233,45 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         return true;
     }
 
-    /** 附魔压缩单位 → 奇点碎片，数量 = 附魔强度。 */
+    /**
+     * 离心机。
+     *
+     * <p>⚠️ 这里**不再**把附魔压缩单位变成奇点碎片。那条是从阶段 3 的临时设计，
+     * 有两个问题：奇点碎片是阶段 6 的物品，不该由阶段 3 的机器产出；
+     * 而且「附魔台灌 500 FE → 离心机 → 碎片 → 换量子核心」是条明显的换钱路。</p>
+     *
+     * <p>现在两件事：</p>
+     * <ol>
+     *   <li><b>解附魔</b>：附魔压缩单位 → 同阶普通单位。补上「附魔件不能拆块/拆分」的死路</li>
+     *   <li><b>处理混沌苹果</b>：混沌苹果 → 1 个奇点碎片（奇点碎片只从阶段 6 的产物里来）</li>
+     * </ol>
+     */
     private boolean runCentrifuge() {
         ItemStack input = inventory.getStackInSlot(0);
-        if (input.isEmpty() || !(input.getItem() instanceof SiaoCompressedItem)) {
+        if (input.isEmpty()) {
             return false;
         }
-        int tier = SiaoComponents.enchantTier(input);
-        if (tier <= 0) {
-            return false;
+
+        if (input.is(SiaoItems.chaosApple().get())) {
+            ItemStack shard = new ItemStack(SiaoItems.singularityShard().get(), 1);
+            if (!insertOutput(shard)) {
+                return false;
+            }
+            input.shrink(1);
+            return true;
         }
-        ItemStack output = new ItemStack(SiaoItems.singularityShard().get(), tier);
-        if (!insertOutput(output)) {
-            return false;
+
+        if (input.getItem() instanceof SiaoCompressedItem && SiaoComponents.isEnchanted(input)) {
+            ItemStack purified = input.copyWithCount(1);
+            SiaoComponents.clearEnchantment(purified);
+            if (!insertOutput(purified)) {
+                return false;
+            }
+            input.shrink(1);
+            return true;
         }
-        input.shrink(1);
-        return true;
+
+        return false;
     }
 
     // ---- 辅助 ---------------------------------------------------------------
@@ -286,20 +311,29 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         return false;
     }
 
-    public int levelOf(UpgradeKind type) {
+    /**
+     * 某个属性当前生效的等级：所有**直接生效**类升级的贡献之和，按实际上限截断。
+     *
+     * <p>进阶层（超频/量子/裂变）不直接贡献等级，只通过
+     * {@link SiaoUpgrades#effectiveCap} 把上限抬上去。</p>
+     */
+    public int statLevel(MachineStat stat) {
         int start = machineKind.upgradeStart();
         int sum = 0;
         for (int slot = start; slot < start + MachineKind.UPGRADE_SLOTS; slot++) {
             ItemStack stack = inventory.getStackInSlot(slot);
-            if (stack.getItem() instanceof SiaoUpgradeItem upgrade && upgrade.kind() == type) {
-                sum += upgrade.contributedLevel(stack);
+            if (stack.getItem() instanceof SiaoUpgradeItem upgrade) {
+                UpgradeType type = upgrade.upgradeType();
+                if (!type.boostsCap() && type.stat() == stat) {
+                    sum += upgrade.contributedLevel(stack);
+                }
             }
         }
-        return Math.min(sum, type.effectiveMaxLevel());
+        return Math.min(sum, SiaoUpgrades.effectiveCap(stat));
     }
 
     public int energyPerOperation() {
-        int percent = energyPercent(levelOf(UpgradeKind.ENERGY));
+        int percent = energyPercent(statLevel(MachineStat.ENERGY));
         return Math.max(1, machineKind.energyPerOperation() * percent / 100);
     }
 
@@ -313,7 +347,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
-        boolean wanted = levelOf(UpgradeKind.ANCHOR) > 0;
+        boolean wanted = statLevel(MachineStat.ANCHOR) > 0;
         if (wanted == chunkForced) {
             return;
         }
