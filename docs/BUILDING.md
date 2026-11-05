@@ -106,7 +106,7 @@ New-Item -ItemType Junction -Path $link -Target $target | Out-Null
 .\gradlew.bat runData --offline
 ```
 
-日志里出现 `Mod List: ... Super Insane Apple Recipe Overload 0.1.0 (siao)`
+日志里出现 `Mod List: ... SuperInsaneAppleRecipeOverload 0.1.0 (siao)`
 和 `SIAO 已装填：108 压缩单位 / 27 粗形态 / 135 方块` 即代表注册矩阵装载正常。
 
 ## 资源生成

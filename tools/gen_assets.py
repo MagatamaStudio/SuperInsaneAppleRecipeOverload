@@ -552,7 +552,7 @@ def main() -> None:
         "prefix.siao.enchanted": "附魔",
     }
     en_lang: dict[str, str] = {
-        "itemGroup.siao.main": "Super Insane Apple Overload",
+        "itemGroup.siao.main": "SuperInsaneAppleRecipeOverload",
         "tooltip.siao.equivalent": "Equivalent to %s \u00d7 %s",
         "prefix.siao.enchanted": "Enchanted ",
     }

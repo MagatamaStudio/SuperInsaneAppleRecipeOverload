@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 超级疯狂的苹果配方超载 (Super Insane Apple Recipe Overload)
+ * SuperInsaneAppleRecipeOverload
  *
  * <p>核心玩法：一切皆可压缩。九个苹果压成一个，一直压到九重，
  * 再拿去换一根木棍。</p>
