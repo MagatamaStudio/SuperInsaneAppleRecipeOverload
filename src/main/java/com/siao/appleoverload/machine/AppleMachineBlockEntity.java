@@ -11,6 +11,7 @@ import com.siao.appleoverload.upgrade.SiaoUpgradeItem;
 import com.siao.appleoverload.upgrade.SiaoUpgrades;
 import com.siao.appleoverload.upgrade.UpgradeType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -28,7 +29,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.energy.EnergyStorage;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -172,6 +175,48 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         }
         if (operations > 0) {
             setChanged();
+        }
+        autoOutput();
+    }
+
+    /**
+     * 主动把产物推给相邻的 {@code IItemHandler}。
+     *
+     * <p>这是 AE2 档位 0 的关键一步：样板供应器**不会来机器里取产物**，
+     * 它每 tick 只把自己那 9 格返回槽灌回网络。所以机器必须自己推回去。
+     * AE2 用 {@code registerGenericAdapters} 把供应器的返回槽适配成普通
+     * {@code IItemHandler}，所以这里只依赖 NeoForge 标准能力，**不需要编译期依赖 AE2**。</p>
+     */
+    private void autoOutput() {
+        int start = machineKind.outputStart();
+        boolean hasOutput = false;
+        for (int slot = start; slot < start + machineKind.outputSlots(); slot++) {
+            if (!inventory.getStackInSlot(slot).isEmpty()) {
+                hasOutput = true;
+                break;
+            }
+        }
+        if (!hasOutput) {
+            return;
+        }
+
+        for (Direction direction : Direction.values()) {
+            BlockPos targetPos = worldPosition.relative(direction);
+            IItemHandler target = level.getCapability(Capabilities.ItemHandler.BLOCK,
+                    targetPos, direction.getOpposite());
+            if (target == null) {
+                continue;
+            }
+            for (int slot = start; slot < start + machineKind.outputSlots(); slot++) {
+                ItemStack stack = inventory.getStackInSlot(slot);
+                if (stack.isEmpty()) {
+                    continue;
+                }
+                ItemStack remaining = ItemHandlerHelper.insertItemStacked(target, stack, false);
+                if (remaining.getCount() != stack.getCount()) {
+                    inventory.setStackInSlot(slot, remaining);
+                }
+            }
         }
     }
 

@@ -348,6 +348,23 @@ public final class SiaoSelfTest {
         check("没电不加工",
                 unpowered.getItemHandler().getStackInSlot(unpowered.machineKind().outputStart()).isEmpty(),
                 unpowered.energyStored() + " FE");
+
+        // 阶段 4a 档位 0：产物自动推给相邻的 IItemHandler（AE2 供应器不会来取，必须自己推）
+        AppleMachineBlockEntity sender = place(server, MachineKind.COMPRESSOR, new BlockPos(0, 202, 0));
+        AppleMachineBlockEntity receiver = place(server, MachineKind.COMPRESSOR, new BlockPos(1, 202, 0));
+        for (int slot = 0; slot < 9; slot++) {
+            sender.getItemHandler().insertItem(slot, new ItemStack(Items.IRON_INGOT), false);
+        }
+        fillEnergy(sender);
+        for (int tick = 0; tick < 60; tick++) {
+            sender.tick();
+        }
+        ItemStack pushed = receiver.getItemHandler().getStackInSlot(0);
+        check("相邻方块推料：产物进了邻居输入槽",
+                sameItem(pushed, unit1) && pushed.getCount() == 1, describe(pushed));
+        check("相邻方块推料：自己输出槽被清空",
+                sender.getItemHandler().getStackInSlot(sender.machineKind().outputStart()).isEmpty(),
+                describe(sender.getItemHandler().getStackInSlot(sender.machineKind().outputStart())));
     }
 
     private static AppleMachineBlockEntity place(MinecraftServer server, MachineKind kind, BlockPos pos) {
