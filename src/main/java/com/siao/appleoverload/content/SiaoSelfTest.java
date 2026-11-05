@@ -317,7 +317,9 @@ public final class SiaoSelfTest {
                 !sameItem(purified, shard), describe(purified));
 
         // 离心机：混沌苹果 → 1 个奇点碎片
-        AppleMachineBlockEntity chaos = place(server, MachineKind.CENTRIFUGE, new BlockPos(9, 200, 0));
+        // 注意坐标：机器现在会主动把产物推给相邻 IItemHandler，
+        // 放在别的机器旁边产物会被推走，所以挪到 (9,206,0) 这种四周空旷的位置
+        AppleMachineBlockEntity chaos = place(server, MachineKind.CENTRIFUGE, new BlockPos(9, 206, 0));
         chaos.getItemHandler().insertItem(0, new ItemStack(SiaoItems.chaosApple().get()), false);
         fillEnergy(chaos);
         for (int tick = 0; tick < 100; tick++) {
