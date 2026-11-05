@@ -19,8 +19,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.entity.player.Player;import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingInput;
@@ -33,6 +32,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.capabilities.Capabilities;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,12 +57,17 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
     public static final int DATA_MAX_PROGRESS = 1;
     public static final int DATA_ENERGY = 2;
     public static final int DATA_ENERGY_MAX = 3;
-    public static final int DATA_COUNT = 4;
+    /** 六个面的通行规则，2 bit 一个面，打包进一个 int 走 ContainerData 同步。 */
+    public static final int DATA_SIDES = 4;
+    public static final int DATA_COUNT = 5;
 
     private final MachineKind machineKind;
     private final MachineItemHandler inventory;
     private final MachineEnergyStorage energy;
     private final ContainerData containerData;
+
+    /** 下标 = {@link Direction#ordinal()}。 */
+    private final SideMode[] sides = defaultSides();
 
     private int progress;
     private int maxProgress = 1;
@@ -81,6 +86,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
                     case DATA_MAX_PROGRESS -> maxProgress;
                     case DATA_ENERGY -> energy.getEnergyStored();
                     case DATA_ENERGY_MAX -> energy.getMaxEnergyStored();
+                    case DATA_SIDES -> packedSides();
                     default -> 0;
                 };
             }
@@ -90,6 +96,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
                 switch (index) {
                     case DATA_PROGRESS -> progress = value;
                     case DATA_MAX_PROGRESS -> maxProgress = value;
+                    case DATA_SIDES -> unpackSides(value);
                     default -> {
                     }
                 }
@@ -110,6 +117,87 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
 
     public IItemHandler getItemHandler() {
         return inventory;
+    }
+
+    /**
+     * 某个面能看到的物品栏视图。
+     *
+     * <p>{@code side == null}（内部/无面）返回完整栏位，机器自己的加工逻辑走这里，
+     * 所以侧配置怎么调都不会把机器自己卡死。</p>
+     */
+    public IItemHandler getItemHandlerFor(@Nullable Direction side) {
+        if (side == null) {
+            return inventory;
+        }
+        SideMode mode = sides[side.ordinal()];
+        if (mode == SideMode.NONE) {
+            return MachineSideHandler.empty();
+        }
+        boolean input = mode.allowsInsert();
+        boolean output = mode.allowsExtract();
+        if (input && output) {
+            return inventory;
+        }
+        if (input) {
+            return new MachineSideHandler(inventory, machineKind.inputStart(),
+                    machineKind.inputSlots(), true, false);
+        }
+        return new MachineSideHandler(inventory, machineKind.outputStart(),
+                machineKind.outputSlots(), false, true);
+    }
+
+    public SideMode sideMode(Direction side) {
+        return sides[side.ordinal()];
+    }
+
+    public void setSideMode(Direction side, SideMode mode) {
+        sides[side.ordinal()] = mode;
+        setChanged();
+    }
+
+    /**
+     * 玩家点一下配置按钮：切掉「玩家所站的那个面」的模式。
+     *
+     * <p>没做 AE2 那种六面小方块 UI —— 那个要画立方体、要处理鼠标拾取，
+     * 而界面我无法验证。用「你站在哪边就改哪边」的规则，行为可预测且不用画图。</p>
+     */
+    public SideMode cycleSideNear(Player player) {
+        Direction face = Direction.getNearest(
+                player.getX() - (worldPosition.getX() + 0.5D),
+                player.getEyeY() - (worldPosition.getY() + 0.5D),
+                player.getZ() - (worldPosition.getZ() + 0.5D));
+        SideMode next = sides[face.ordinal()].next();
+        sides[face.ordinal()] = next;
+        setChanged();
+        return next;
+    }
+
+    /** 玩家所站的那个面（给界面显示用）。 */
+    public Direction faceNear(Player player) {
+        return Direction.getNearest(
+                player.getX() - (worldPosition.getX() + 0.5D),
+                player.getEyeY() - (worldPosition.getY() + 0.5D),
+                player.getZ() - (worldPosition.getZ() + 0.5D));
+    }
+
+    private static SideMode[] defaultSides() {
+        SideMode[] array = new SideMode[6];
+        java.util.Arrays.fill(array, SideMode.BOTH);
+        return array;
+    }
+
+    private int packedSides() {
+        int packed = 0;
+        for (int i = 0; i < sides.length; i++) {
+            packed |= sides[i].ordinal() << (2 * i);
+        }
+        return packed;
+    }
+
+    private void unpackSides(int packed) {
+        for (int i = 0; i < sides.length; i++) {
+            sides[i] = SideMode.byOrdinal((packed >> (2 * i)) & 0b11);
+        }
     }
 
     public IEnergyStorage getEnergyStorage() {
@@ -419,6 +507,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         tag.put("inventory", inventory.serializeNBT(registries));
         tag.put("energy", energy.serializeNBT(registries));
         tag.putInt("progress", progress);
+        tag.putInt("sides", packedSides());
     }
 
     @Override
@@ -427,6 +516,9 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         inventory.deserializeNBT(registries, tag.getCompound("inventory"));
         energy.deserializeNBT(registries, tag.get("energy"));
         progress = tag.getInt("progress");
+        if (tag.contains("sides")) {
+            unpackSides(tag.getInt("sides"));
+        }
     }
 
     // ---- 内部类型 -----------------------------------------------------------

@@ -351,5 +351,10 @@
   "material.siao.quartz": "Nether Quartz",
   "material.siao.redstone": "Redstone",
   "prefix.siao.enchanted": "Enchanted ",
-  "tooltip.siao.equivalent": "Equivalent to %s × %s"
+  "side.siao.both": "Both",
+  "side.siao.input": "Input only",
+  "side.siao.none": "Closed",
+  "side.siao.output": "Output only",
+  "tooltip.siao.equivalent": "Equivalent to %s × %s",
+  "tooltip.siao.side_button": "Cycle the item access on the face you are standing at"
 }

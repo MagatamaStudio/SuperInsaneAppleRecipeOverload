@@ -2,6 +2,8 @@ package com.siao.appleoverload.machine;
 
 import com.siao.appleoverload.SiaoMod;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -22,6 +24,8 @@ public class AppleMachineScreen extends AbstractContainerScreen<AppleMachineMenu
     private static final int PROGRESS_COLOR = 0xFFFFC64B;
     private static final int BAR_TRACK = 0xFF2A2A2A;
 
+    private Button sideButton;
+
     public AppleMachineScreen(AppleMachineMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = MachineLayout.WIDTH;
@@ -34,9 +38,35 @@ public class AppleMachineScreen extends AbstractContainerScreen<AppleMachineMenu
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        syncSideButton();
         renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        sideButton = Button.builder(Component.empty(), button -> {
+                    if (minecraft != null && minecraft.gameMode != null) {
+                        minecraft.gameMode.handleInventoryButtonClick(
+                                menu.containerId, AppleMachineMenu.BUTTON_CYCLE_SIDE);
+                    }
+                })
+                .bounds(leftPos + 150, topPos + 3, 22, 18)
+                .tooltip(Tooltip.create(Component.translatable("tooltip.siao.side_button")))
+                .build();
+        addRenderableWidget(sideButton);
+    }
+
+    /** 按钮上只放一个字：双 / 入 / 出 / 关。 */
+    private void syncSideButton() {
+        if (sideButton == null || minecraft == null || minecraft.player == null) {
+            return;
+        }
+        SideMode mode = menu.sideMode(minecraft.player);
+        String zh = mode.zh();
+        sideButton.setMessage(Component.literal(zh.substring(0, 1)));
     }
 
     @Override

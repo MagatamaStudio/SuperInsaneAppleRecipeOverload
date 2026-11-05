@@ -16,7 +16,7 @@ public final class SiaoCommonEvents {
      */
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, SiaoMachineRegistry.MACHINE.get(),
-                (machine, side) -> machine.getItemHandler());
+                (machine, side) -> machine.getItemHandlerFor(side));
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, SiaoMachineRegistry.MACHINE.get(),
                 (machine, side) -> machine.getEnergyStorage());
     }

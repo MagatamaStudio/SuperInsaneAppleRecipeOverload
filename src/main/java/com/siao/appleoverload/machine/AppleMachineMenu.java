@@ -2,6 +2,7 @@ package com.siao.appleoverload.machine;
 
 import com.siao.appleoverload.upgrade.SiaoUpgradeItem;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -88,6 +89,27 @@ public class AppleMachineMenu extends AbstractContainerMenu {
 
     public int maxProgress() {
         return machine.containerData().get(AppleMachineBlockEntity.DATA_MAX_PROGRESS);
+    }
+
+    /** 玩家所站的那个面（界面按钮显示它）。 */
+    public Direction facingSide(Player player) {
+        return machine.faceNear(player);
+    }
+
+    public SideMode sideMode(Player player) {
+        return machine.sideMode(machine.faceNear(player));
+    }
+
+    /** 按钮 id：0 = 循环「玩家所站那个面」的通行规则。 */
+    public static final int BUTTON_CYCLE_SIDE = 0;
+
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (id == BUTTON_CYCLE_SIDE) {
+            machine.cycleSideNear(player);
+            return true;
+        }
+        return false;
     }
 
     @Override

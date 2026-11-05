@@ -4,10 +4,12 @@ import com.siao.appleoverload.SiaoMod;
 import com.siao.appleoverload.config.SiaoConfig;
 import com.siao.appleoverload.machine.AppleMachineBlockEntity;
 import com.siao.appleoverload.machine.MachineKind;
+import com.siao.appleoverload.machine.SideMode;
 import com.siao.appleoverload.recipe.CompressionIndex;
 import com.siao.appleoverload.recipe.SiaoCompressionRecipe;
 import com.siao.appleoverload.upgrade.SiaoUpgrades;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -21,6 +23,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.common.DataMapHooks;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -169,9 +172,47 @@ public final class SiaoSelfTest {
         check("自定义压缩配方装载数 = 542", loaded == 542L, loaded + " 条");
 
         machineCases(server);
+        sideConfigCases(server);
         phase6Cases(server, registries);
         copperCases();
         configCases(server);
+    }
+
+    /** 侧配置：每个面的物品通行规则。 */
+    private static void sideConfigCases(MinecraftServer server) {
+        AppleMachineBlockEntity machine = place(server, MachineKind.COMPRESSOR, new BlockPos(4, 206, 0));
+        Direction face = Direction.UP;
+
+        check("侧配置：新机器六面默认双向",
+                machine.sideMode(face) == SideMode.BOTH, machine.sideMode(face).name());
+        check("侧配置：双向面能看到全部槽位",
+                machine.getItemHandlerFor(face).getSlots() == machine.machineKind().totalSlots(),
+                machine.getItemHandlerFor(face).getSlots() + " 槽");
+
+        machine.setSideMode(face, SideMode.OUTPUT);
+        IItemHandler outputOnly = machine.getItemHandlerFor(face);
+        check("侧配置：仅输出面只剩输出槽",
+                outputOnly.getSlots() == machine.machineKind().outputSlots(),
+                outputOnly.getSlots() + " 槽");
+        check("侧配置：仅输出面插不进东西",
+                !outputOnly.insertItem(0, new ItemStack(Items.IRON_INGOT), true).isEmpty(),
+                "居然插进去了");
+        check("侧配置：没改过的面不受影响",
+                machine.getItemHandlerFor(Direction.DOWN).getSlots() == machine.machineKind().totalSlots(),
+                machine.getItemHandlerFor(Direction.DOWN).getSlots() + " 槽");
+
+        machine.setSideMode(face, SideMode.INPUT);
+        IItemHandler inputOnly = machine.getItemHandlerFor(face);
+        check("侧配置：仅输入面抽不出东西",
+                inputOnly.extractItem(0, 1, true).isEmpty(), "居然抽出来了");
+
+        machine.setSideMode(face, SideMode.NONE);
+        check("侧配置：封闭面 0 槽", machine.getItemHandlerFor(face).getSlots() == 0,
+                machine.getItemHandlerFor(face).getSlots() + "");
+
+        check("侧配置：内部逻辑看不到侧配置（不会被自己卡死）",
+                machine.getItemHandler().getSlots() == machine.machineKind().totalSlots(),
+                machine.getItemHandler().getSlots() + " 槽");
     }
 
     /** 阶段 7：配置项。 */

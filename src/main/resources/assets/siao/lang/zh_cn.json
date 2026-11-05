@@ -351,5 +351,10 @@
   "material.siao.quartz": "下界石英",
   "material.siao.redstone": "红石",
   "prefix.siao.enchanted": "附魔",
-  "tooltip.siao.equivalent": "相当于 %s 个%s"
+  "side.siao.both": "双向",
+  "side.siao.input": "仅输入",
+  "side.siao.none": "封闭",
+  "side.siao.output": "仅输出",
+  "tooltip.siao.equivalent": "相当于 %s 个%s",
+  "tooltip.siao.side_button": "点击切换「你站的这一面」的物品通行规则"
 }

@@ -633,11 +633,21 @@ def main() -> None:
         "itemGroup.siao.main": "超级疯狂的苹果配方超载",
         "tooltip.siao.equivalent": "相当于 %s 个%s",
         "prefix.siao.enchanted": "附魔",
+        "side.siao.both": "双向",
+        "side.siao.input": "仅输入",
+        "side.siao.output": "仅输出",
+        "side.siao.none": "封闭",
+        "tooltip.siao.side_button": "点击切换「你站的这一面」的物品通行规则",
     }
     en_lang: dict[str, str] = {
         "itemGroup.siao.main": "SuperInsaneAppleRecipeOverload",
         "tooltip.siao.equivalent": "Equivalent to %s \u00d7 %s",
         "prefix.siao.enchanted": "Enchanted ",
+        "side.siao.both": "Both",
+        "side.siao.input": "Input only",
+        "side.siao.output": "Output only",
+        "side.siao.none": "Closed",
+        "tooltip.siao.side_button": "Cycle the item access on the face you are standing at",
     }
 
     def write_json(path: Path, data: dict) -> None:
