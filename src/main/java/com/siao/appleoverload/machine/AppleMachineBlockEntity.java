@@ -259,11 +259,27 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         return CraftingInput.of(3, 3, slots);
     }
 
+    /**
+     * 往输出槽里塞产物。
+     *
+     * <p>⚠️ 不能走 {@code inventory.insertItem}：输出槽在 {@link MachineItemHandler#isItemValid}
+     * 里是 false（挡住漏斗和玩家往里塞），而 {@code insertItem} 会先做这个校验，
+     * 于是机器自己也被挡在外面 —— 表现就是「机器一直转，但什么都不出」。
+     * 内部产出必须绕开校验直接写槽位。</p>
+     */
     private boolean insertOutput(ItemStack stack) {
         int start = machineKind.outputStart();
         for (int slot = start; slot < start + machineKind.outputSlots(); slot++) {
-            if (inventory.insertItem(slot, stack.copy(), true).isEmpty()) {
-                inventory.insertItem(slot, stack.copy(), false);
+            ItemStack current = inventory.getStackInSlot(slot);
+            if (current.isEmpty()) {
+                inventory.setStackInSlot(slot, stack.copy());
+                return true;
+            }
+            if (ItemStack.isSameItemSameComponents(current, stack)
+                    && current.getCount() + stack.getCount() <= current.getMaxStackSize()) {
+                ItemStack merged = current.copy();
+                merged.grow(stack.getCount());
+                inventory.setStackInSlot(slot, merged);
                 return true;
             }
         }

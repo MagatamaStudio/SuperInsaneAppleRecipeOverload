@@ -187,7 +187,8 @@ public final class SiaoSelfTest {
         for (int slot = 0; slot < 9; slot++) {
             compressor.getItemHandler().insertItem(slot, new ItemStack(Items.IRON_INGOT), false);
         }
-        compressor.getEnergyStorage().receiveEnergy(100_000, false);
+        fillEnergy(compressor);
+        int energyBefore = compressor.energyStored();
         for (int tick = 0; tick < 60; tick++) {
             compressor.tick();
         }
@@ -198,7 +199,8 @@ public final class SiaoSelfTest {
                 compressor.getItemHandler().getStackInSlot(0).isEmpty(),
                 compressor.getItemHandler().getStackInSlot(0) + "");
         check("压缩机：扣了 200 FE",
-                compressor.energyStored() == 100_000 - 200, compressor.energyStored() + " FE");
+                compressor.energyStored() == energyBefore - 200,
+                "before=" + energyBefore + " after=" + compressor.energyStored());
 
         // 速度升级：等级 1 → 40 tick 变 20 tick
         AppleMachineBlockEntity fast = place(server, MachineKind.COMPRESSOR, new BlockPos(2, 200, 0));
@@ -207,7 +209,7 @@ public final class SiaoSelfTest {
         }
         fast.getItemHandler().insertItem(fast.machineKind().upgradeStart(),
                 new ItemStack(SiaoItems.upgrade(UpgradeKind.SPEED).get()), false);
-        fast.getEnergyStorage().receiveEnergy(100_000, false);
+        fillEnergy(fast);
         for (int tick = 0; tick < 25; tick++) {
             fast.tick();
         }
@@ -225,7 +227,7 @@ public final class SiaoSelfTest {
         // 附魔台
         AppleMachineBlockEntity enchanter = place(server, MachineKind.ENCHANTER, new BlockPos(6, 200, 0));
         enchanter.getItemHandler().insertItem(0, unit1.copy(), false);
-        enchanter.getEnergyStorage().receiveEnergy(100_000, false);
+        fillEnergy(enchanter);
         for (int tick = 0; tick < 80; tick++) {
             enchanter.tick();
         }
@@ -238,7 +240,7 @@ public final class SiaoSelfTest {
         ItemStack enchantedUnit2 = unit2.copy();
         SiaoComponents.makeEnchanted(enchantedUnit2, 3);
         centrifuge.getItemHandler().insertItem(0, enchantedUnit2, false);
-        centrifuge.getEnergyStorage().receiveEnergy(100_000, false);
+        fillEnergy(centrifuge);
         for (int tick = 0; tick < 100; tick++) {
             centrifuge.tick();
         }
@@ -248,7 +250,7 @@ public final class SiaoSelfTest {
 
         AppleMachineBlockEntity idle = place(server, MachineKind.CENTRIFUGE, new BlockPos(10, 200, 0));
         idle.getItemHandler().insertItem(0, unit1.copy(), false);
-        idle.getEnergyStorage().receiveEnergy(100_000, false);
+        fillEnergy(idle);
         for (int tick = 0; tick < 200; tick++) {
             idle.tick();
         }
@@ -278,6 +280,14 @@ public final class SiaoSelfTest {
             return machine;
         }
         throw new IllegalStateException("机器没放上：" + pos);
+    }
+
+    /** 充满能量。单次 receiveEnergy 受 maxReceive 限制，调用一次只能灌 4000，所以要循环。 */
+    private static void fillEnergy(AppleMachineBlockEntity machine) {
+        int capacity = machine.getEnergyStorage().getMaxEnergyStored();
+        for (int guard = 0; guard < 1000 && machine.energyStored() < capacity; guard++) {
+            machine.getEnergyStorage().receiveEnergy(capacity, false);
+        }
     }
 
     // ---- 工具 ---------------------------------------------------------------
