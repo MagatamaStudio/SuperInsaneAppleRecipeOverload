@@ -16,6 +16,7 @@ $ErrorActionPreference = 'Stop'
 $ModDevVersion = '2.0.141'
 $IdeaExtVersion = '1.2'
 $GsonVersion = '2.10.1'
+$Ae2Version = '19.2.18'
 
 $repoDir = Join-Path $PSScriptRoot 'offline-repo'
 $pluginPortal = 'https://plugins.gradle.org/m2'
@@ -63,6 +64,13 @@ Save-File "$central/com/google/code/gson/gson/$GsonVersion/gson-$GsonVersion.jar
 # 父 POM 也要在，否则 Gradle 解析父级会失败
 Save-File "$central/com/google/code/gson/gson-parent/$GsonVersion/gson-parent-$GsonVersion.pom" `
     "$repoDir/com/google/code/gson/gson-parent/$GsonVersion/gson-parent-$GsonVersion.pom"
+
+# 4) AE2 api jar（compileOnly 依赖，只用到 appeng.api.*）
+$ae2Dir = "$repoDir/org/appliedenergistics/appliedenergistics2/$Ae2Version"
+Save-File "$central/org/appliedenergistics/appliedenergistics2/$Ae2Version/appliedenergistics2-$Ae2Version.pom" `
+    "$ae2Dir/appliedenergistics2-$Ae2Version.pom"
+Save-File "$central/org/appliedenergistics/appliedenergistics2/$Ae2Version/appliedenergistics2-$Ae2Version-api.jar" `
+    "$ae2Dir/appliedenergistics2-$Ae2Version-api.jar"
 
 Write-Host ""
 Write-Host "== 完成，共 $((Get-ChildItem $repoDir -Recurse -File).Count) 个文件"
