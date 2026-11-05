@@ -5,7 +5,8 @@ plugins {
 
 version = mod_version
 group = mod_group
-base.archivesName = mod_id
+// 产物文件名用模组名（仓库名），不是 modid —— modid 是技术命名空间，必须保持小写 siao
+base.archivesName = mod_name
 
 java {
     toolchain {

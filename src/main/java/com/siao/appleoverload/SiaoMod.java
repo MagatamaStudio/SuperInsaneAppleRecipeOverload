@@ -30,7 +30,8 @@ import org.slf4j.LoggerFactory;
 @Mod(SiaoMod.MOD_ID)
 public final class SiaoMod {
     public static final String MOD_ID = "siao";
-    public static final Logger LOGGER = LoggerFactory.getLogger("SIAO");
+    /** 日志前缀用模组名（仓库名），别和 modid 混在一起。 */
+    public static final Logger LOGGER = LoggerFactory.getLogger("SuperInsaneAppleRecipeOverload");
 
     public SiaoMod(IEventBus modBus, ModContainer container) {
         // 先触发方块注册（它会把同名 BlockItem 注入 SiaoItems）

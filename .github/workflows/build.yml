@@ -36,7 +36,7 @@ jobs:
       - name: 上传 jar
         uses: actions/upload-artifact@v4
         with:
-          name: siao-jar
+          name: SuperInsaneAppleRecipeOverload-jar
           path: build/libs/*.jar
           if-no-files-found: error
 
