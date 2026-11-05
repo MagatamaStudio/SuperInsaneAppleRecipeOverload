@@ -15,6 +15,12 @@
     "siao:compressed_1x_copper_chiseled": {
       "next_oxidation_stage": "siao:exposed_compressed_1x_copper_chiseled"
     },
+    "siao:compressed_1x_copper_stairs": {
+      "next_oxidation_stage": "siao:exposed_compressed_1x_copper_stairs"
+    },
+    "siao:compressed_1x_copper_slab": {
+      "next_oxidation_stage": "siao:exposed_compressed_1x_copper_slab"
+    },
     "siao:exposed_compressed_1x_copper": {
       "next_oxidation_stage": "siao:weathered_compressed_1x_copper"
     },
@@ -30,6 +36,12 @@
     "siao:exposed_compressed_1x_copper_chiseled": {
       "next_oxidation_stage": "siao:weathered_compressed_1x_copper_chiseled"
     },
+    "siao:exposed_compressed_1x_copper_stairs": {
+      "next_oxidation_stage": "siao:weathered_compressed_1x_copper_stairs"
+    },
+    "siao:exposed_compressed_1x_copper_slab": {
+      "next_oxidation_stage": "siao:weathered_compressed_1x_copper_slab"
+    },
     "siao:weathered_compressed_1x_copper": {
       "next_oxidation_stage": "siao:oxidized_compressed_1x_copper"
     },
@@ -44,6 +56,12 @@
     },
     "siao:weathered_compressed_1x_copper_chiseled": {
       "next_oxidation_stage": "siao:oxidized_compressed_1x_copper_chiseled"
+    },
+    "siao:weathered_compressed_1x_copper_stairs": {
+      "next_oxidation_stage": "siao:oxidized_compressed_1x_copper_stairs"
+    },
+    "siao:weathered_compressed_1x_copper_slab": {
+      "next_oxidation_stage": "siao:oxidized_compressed_1x_copper_slab"
     }
   }
 }

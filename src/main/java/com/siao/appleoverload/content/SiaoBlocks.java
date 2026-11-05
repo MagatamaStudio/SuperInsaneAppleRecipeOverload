@@ -4,6 +4,8 @@ import com.siao.appleoverload.SiaoMod;
 import com.siao.appleoverload.machine.AppleMachineBlock;
 import com.siao.appleoverload.machine.MachineKind;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.neoforge.registries.DeferredBlock;
@@ -64,10 +66,16 @@ public final class SiaoBlocks {
                         continue;
                     }
                     String id = CopperVariant.id(stage, shape, waxed);
-                    DeferredBlock<Block> block = BLOCKS.registerSimpleBlock(id, BlockBehaviour.Properties.of()
+                    BlockBehaviour.Properties properties = BlockBehaviour.Properties.of()
                             .strength(3.0F, 6.0F)
                             .requiresCorrectToolForDrops()
-                            .sound(SoundType.COPPER));
+                            .sound(SoundType.COPPER);
+                    DeferredBlock<Block> block = switch (shape) {
+                        case STAIRS -> BLOCKS.register(id, () -> new SiaoStairBlock(
+                                Blocks.CUT_COPPER.defaultBlockState(), properties));
+                        case SLAB -> BLOCKS.register(id, () -> new SlabBlock(properties));
+                        default -> BLOCKS.registerSimpleBlock(id, properties);
+                    };
                     COPPER_VARIANTS.put(id, block);
                     SiaoItems.registerBlockItem(id, block);
                 }

@@ -192,6 +192,24 @@ def main() -> None:
            },
            f"{MOD_ID}:chaos_apple")
 
+    # ---- 铜：楼梯 / 台阶（各 8 个：4 氧化阶 × 涂蜡）-------------------------
+    def copper_base_id(stage: str, waxed: bool) -> str:
+        if stage == "" and not waxed:
+            return "compressed_1x_copper_block"
+        block_id = f"{stage}compressed_1x_copper"
+        return block_id + "_waxed" if waxed else block_id
+
+    for stage in ("", "exposed_", "weathered_", "oxidized_"):
+        for waxed in (False, True):
+            suffix = "_waxed" if waxed else ""
+            source = f"{MOD_ID}:{copper_base_id(stage, waxed)}"
+            stairs_id = f"{stage}compressed_1x_copper_stairs{suffix}"
+            slab_id = f"{stage}compressed_1x_copper_slab{suffix}"
+            shaped(f"craft_{stairs_id}",
+                   ["B  ", "BB ", "BBB"], {"B": source}, f"{MOD_ID}:{stairs_id}", 4)
+            shaped(f"craft_{slab_id}",
+                   ["BBB"], {"B": source}, f"{MOD_ID}:{slab_id}", 6)
+
     print(f"配方文件: {written}")
 
 

@@ -258,7 +258,90 @@ COPPER_SHAPES = [
     ("polished", "磨制", "Polished"),
     ("grate", "格栅", "Grate"),
     ("chiseled", "雕纹", "Chiseled"),
+    ("stairs", "楼梯", "Stairs"),
+    ("slab", "台阶", "Slab"),
 ]
+
+# 朝向 -> 基础旋转（与 vanilla 楼梯 blockstate 一致）
+STAIRS_FACING_Y = {"east": 0, "south": 90, "west": 180, "north": 270}
+
+
+def stairs_blockstate(model_ns: str) -> dict:
+    """复刻 vanilla 楼梯 blockstate 的 40 个变体。"""
+    variants = {}
+    for facing, base in STAIRS_FACING_Y.items():
+        for half in ("bottom", "top"):
+            for shape in ("straight", "inner_left", "inner_right", "outer_left", "outer_right"):
+                if half == "bottom":
+                    delta = {"straight": 0, "inner_right": 0, "outer_right": 0,
+                             "inner_left": -90, "outer_left": -90}[shape]
+                else:
+                    delta = {"straight": 0, "inner_left": 0, "outer_left": 0,
+                             "inner_right": 90, "outer_right": 90}[shape]
+                y = (base + delta) % 360
+                model = model_ns
+                if shape.startswith("inner"):
+                    model = f"{model_ns}_inner"
+                elif shape.startswith("outer"):
+                    model = f"{model_ns}_outer"
+                entry = {"model": model}
+                if half == "top":
+                    entry["x"] = 180
+                if y:
+                    entry["y"] = y
+                if y or half == "top":
+                    entry["uvlock"] = True
+                variants[f"facing={facing},half={half},shape={shape}"] = entry
+    return {"variants": variants}
+
+
+def slab_blockstate(model_ns: str) -> dict:
+    return {"variants": {
+        "type=bottom": {"model": model_ns},
+        "type=double": {"model": model_ns},
+        "type=top": {"model": f"{model_ns}_top"},
+    }}
+
+
+def stairs_loot(block_id: str) -> dict:
+    return {
+        "type": "minecraft:block",
+        "pools": [{
+            "bonus_rolls": 0.0,
+            "conditions": [{"condition": "minecraft:survives_explosion"}],
+            "entries": [{"type": "minecraft:item", "name": f"{MOD_ID}:{block_id}"}],
+            "rolls": 1.0,
+        }],
+        "random_sequence": f"{MOD_ID}:blocks/{block_id}",
+    }
+
+
+def slab_loot(block_id: str) -> dict:
+    return {
+        "type": "minecraft:block",
+        "pools": [{
+            "bonus_rolls": 0.0,
+            "entries": [{
+                "type": "minecraft:item",
+                "functions": [
+                    {
+                        "add": False,
+                        "conditions": [{
+                            "block": f"{MOD_ID}:{block_id}",
+                            "condition": "minecraft:block_state_property",
+                            "properties": {"type": "double"},
+                        }],
+                        "count": 2.0,
+                        "function": "minecraft:set_count",
+                    },
+                    {"function": "minecraft:explosion_decay"},
+                ],
+                "name": f"{MOD_ID}:{block_id}",
+            }],
+            "rolls": 1.0,
+        }],
+        "random_sequence": f"{MOD_ID}:blocks/{block_id}",
+    }
 
 UPGRADES = [
     ("speed", "速度升级", "Speed Upgrade", (90, 200, 255), False),
@@ -670,6 +753,7 @@ def main() -> None:
                     continue
                 copper_jobs.append((stage_prefix, shape_suffix, waxed, color))
 
+    special_loot: list[tuple[str, str]] = []
     for stage_prefix, shape_suffix, waxed, color in copper_jobs:
         block_id = f"{stage_prefix}compressed_1x_copper"
         if shape_suffix:
@@ -678,15 +762,43 @@ def main() -> None:
             block_id += "_waxed"
         copper_ids[(stage_prefix, shape_suffix, waxed)] = block_id
 
-        make_copper_texture(color, shape_suffix, waxed).save(tex_block / f"{block_id}.png")
-        write_json(models_block / f"{block_id}.json", {
-            "parent": "block/cube_all",
-            "textures": {"all": f"{MOD_ID}:block/{block_id}"},
-        })
-        write_json(blockstates / f"{block_id}.json", {
-            "variants": {"": {"model": f"{MOD_ID}:block/{block_id}"}},
-        })
-        write_json(models_item / f"{block_id}.json", {"parent": f"{MOD_ID}:block/{block_id}"})
+        is_stairs = shape_suffix == "stairs"
+        is_slab = shape_suffix == "slab"
+        texture_shape = "" if (is_stairs or is_slab) else shape_suffix
+        make_copper_texture(color, texture_shape, waxed).save(tex_block / f"{block_id}.png")
+
+        model_ns = f"{MOD_ID}:block/{block_id}"
+        texture_ns = f"{MOD_ID}:block/{block_id}"
+        if is_stairs:
+            for suffix, parent in (("", "minecraft:block/stairs"),
+                                   ("_inner", "minecraft:block/inner_stairs"),
+                                   ("_outer", "minecraft:block/outer_stairs")):
+                write_json(models_block / f"{block_id}{suffix}.json", {
+                    "parent": parent,
+                    "textures": {"bottom": texture_ns, "top": texture_ns, "side": texture_ns},
+                })
+            write_json(blockstates / f"{block_id}.json", stairs_blockstate(model_ns))
+            special_loot.append((block_id, "stairs"))
+        elif is_slab:
+            for suffix, parent in (("", "minecraft:block/slab"),
+                                   ("_top", "minecraft:block/slab_top")):
+                write_json(models_block / f"{block_id}{suffix}.json", {
+                    "parent": parent,
+                    "textures": {"bottom": texture_ns, "top": texture_ns, "side": texture_ns},
+                })
+            write_json(blockstates / f"{block_id}.json", slab_blockstate(model_ns))
+            special_loot.append((block_id, "slab"))
+        else:
+            write_json(models_block / f"{block_id}.json", {
+                "parent": "block/cube_all",
+                "textures": {"all": texture_ns},
+            })
+            write_json(blockstates / f"{block_id}.json", {
+                "variants": {"": {"model": model_ns}},
+            })
+            block_ids.append(block_id)
+
+        write_json(models_item / f"{block_id}.json", {"parent": model_ns})
 
         stage_zh = next(zh for pfx, zh, _, _ in COPPER_STAGES if pfx == stage_prefix)
         stage_en = next(en for pfx, _, en, _ in COPPER_STAGES if pfx == stage_prefix)
@@ -699,7 +811,6 @@ def main() -> None:
             + (stage_en + " " if stage_en else "")
             + (shape_en + " " if shape_en else "")
             + "1x Compressed Copper Ingot Block")
-        block_ids.append(block_id)
         counts["block"] += 1
 
     # ---- data map：氧化 / 涂蜡（命名空间必须是 neoforge）--------------------
@@ -737,12 +848,17 @@ def main() -> None:
             }],
         })
 
+    # 楼梯/台阶的掉落规则不同（台阶双份要掉 2 个）
+    for block_id, kind in special_loot:
+        payload = stairs_loot(block_id) if kind == "stairs" else slab_loot(block_id)
+        write_json(loot_dir / f"{block_id}.json", payload)
+
     write_json(lang_dir / "zh_cn.json", dict(sorted(zh_lang.items())))
     write_json(lang_dir / "en_us.json", dict(sorted(en_lang.items())))
 
     print(f"物品贴图/模型 : {counts['item']}")
     print(f"方块贴图/模型 : {counts['block']}")
-    print(f"战利品表      : {len(block_ids)}")
+    print(f"战利品表      : {len(block_ids) + len(special_loot)}")
     print(f"lang 条目     : {len(zh_lang)}")
 
 

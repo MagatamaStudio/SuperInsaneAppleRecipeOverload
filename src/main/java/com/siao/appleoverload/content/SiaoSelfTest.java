@@ -180,8 +180,16 @@ public final class SiaoSelfTest {
         Block base = SiaoBlocks.copperVariant(CopperVariant.Stage.UNAFFECTED, CopperVariant.Shape.BASE, false).get();
         Block exposedBase = SiaoBlocks.copperVariant(CopperVariant.Stage.EXPOSED, CopperVariant.Shape.BASE, false).get();
 
-        check("铜：注册了 39 个整块变种", SiaoBlocks.copperVariantCount() == 39,
-                SiaoBlocks.copperVariantCount() + " 个");
+        check("铜：注册了 55 个变种（5 整块 × 8 + 楼梯 8 + 台阶 8 − 1 复用）",
+                SiaoBlocks.copperVariantCount() == 55, SiaoBlocks.copperVariantCount() + " 个");
+        Block stairsBlock = SiaoBlocks.copperVariant(CopperVariant.Stage.UNAFFECTED,
+                CopperVariant.Shape.STAIRS, false).get();
+        Block slabBlock = SiaoBlocks.copperVariant(CopperVariant.Stage.OXIDIZED,
+                CopperVariant.Shape.SLAB, true).get();
+        check("铜：楼梯用了 StairBlock", stairsBlock instanceof net.minecraft.world.level.block.StairBlock,
+                stairsBlock.getClass().getSimpleName());
+        check("铜：台阶用了 SlabBlock", slabBlock instanceof net.minecraft.world.level.block.SlabBlock,
+                slabBlock.getClass().getSimpleName());
         check("铜：未氧化基础格复用一重压缩铜块",
                 base == SiaoBlocks.unitBlock(Material.COPPER, 1).get(), String.valueOf(base));
         check("铜：oxidizables 表生效（基础 -> 斑驳）",

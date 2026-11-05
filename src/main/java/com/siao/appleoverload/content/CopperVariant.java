@@ -54,13 +54,15 @@ public final class CopperVariant {
         }
     }
 
-    /** 形状。前五个是整块变种，stairs/slab 形态不同，另外注册。 */
+    /** 形状。最后两个是楼梯/台阶，方块类不同。 */
     public enum Shape {
         BASE("", "", "", ""),
         CUT("cut", "切制", "Cut", "cut"),
         POLISHED("polished", "磨制", "Polished", "polished"),
         GRATE("grate", "格栅", "Grate", "grate"),
-        CHISELED("chiseled", "雕纹", "Chiseled", "chiseled");
+        CHISELED("chiseled", "雕纹", "Chiseled", "chiseled"),
+        STAIRS("stairs", "楼梯", "Stairs", "stairs"),
+        SLAB("slab", "台阶", "Slab", "slab");
 
         private final String idSuffix;
         private final String zh;

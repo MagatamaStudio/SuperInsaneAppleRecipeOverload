@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "siao:block/compressed_1x_copper_slab",
+    "top": "siao:block/compressed_1x_copper_slab",
+    "side": "siao:block/compressed_1x_copper_slab"
+  }
+}
