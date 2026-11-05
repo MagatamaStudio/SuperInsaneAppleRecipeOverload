@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import argparse
+import colorsys
 import json
 import math
 import shutil
@@ -320,6 +321,59 @@ def make_shard_texture() -> Image.Image:
     return img
 
 
+def make_singularity_texture() -> Image.Image:
+    """绝对苹果奇点：事件视界 + 紫色吸积盘。"""
+    size = ITEM_SIZE
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    c = size / 2.0
+
+    for radius, alpha in ((0.48, 50), (0.41, 80), (0.34, 110)):
+        r = size * radius
+        draw.ellipse([c - r, c - r, c + r, c + r], fill=(120, 60, 220, alpha))
+
+    r = size * 0.30
+    draw.ellipse([c - r, c - r, c + r, c + r], outline=(190, 130, 255, 220),
+                 width=max(2, size // 32))
+    r = size * 0.36
+    draw.ellipse([c - r, c - r, c + r, c + r], outline=(120, 70, 200, 130),
+                 width=max(1, size // 48))
+    r = size * 0.21
+    draw.ellipse([c - r, c - r, c + r, c + r], fill=(8, 6, 14, 255))
+
+    spark = max(1, size // 40)
+    for i in range(8):
+        angle = math.pi / 4 * i
+        x = c + math.cos(angle) * size * 0.40
+        y = c + math.sin(angle) * size * 0.15
+        draw.ellipse([x - spark, y - spark, x + spark, y + spark], fill=(255, 240, 255, 230))
+    return img
+
+
+def make_chaos_apple_texture() -> Image.Image:
+    """混沌苹果：原版苹果 + 坐标驱动的确定性伪随机色相，看起来就是不稳定的。"""
+    size = ITEM_SIZE
+    icon = load_icon("APPLE", int(size * 0.86)).convert("RGBA")
+    pixels = icon.load()
+    width, height = icon.size
+    for y in range(height):
+        for x in range(width):
+            r, g, b, a = pixels[x, y]
+            if a < 8:
+                continue
+            hue = ((x * 7 + y * 13) % 360) / 360.0
+            tint = colorsys.hsv_to_rgb(hue, 0.85, 1.0)
+            pixels[x, y] = (
+                int(r * 0.35 + tint[0] * 255 * 0.65),
+                int(g * 0.35 + tint[1] * 255 * 0.65),
+                int(b * 0.35 + tint[2] * 255 * 0.65),
+                a,
+            )
+    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    canvas.alpha_composite(icon, ((size - width) // 2, (size - height) // 2))
+    return canvas
+
+
 def slot_boxes() -> list[tuple[int, int]]:
     boxes = []
     for i in range(9):
@@ -523,15 +577,21 @@ def main() -> None:
         en_lang[f"item.{MOD_ID}.{item_id}"] = en
         counts["item"] += 1
 
-    # ---- 奇点碎片 -----------------------------------------------------------
-    make_shard_texture().save(tex_item / "singularity_shard.png")
-    write_json(models_item / "singularity_shard.json", {
-        "parent": "item/generated",
-        "textures": {"layer0": f"{MOD_ID}:item/singularity_shard"},
-    })
-    zh_lang[f"item.{MOD_ID}.singularity_shard"] = "奇点碎片"
-    en_lang[f"item.{MOD_ID}.singularity_shard"] = "Singularity Shard"
-    counts["item"] += 1
+    # ---- 奇点碎片 / 奇点 / 混沌苹果 -----------------------------------------
+    specials = [
+        ("singularity_shard", "奇点碎片", "Singularity Shard", make_shard_texture),
+        ("singularity", "绝对苹果奇点", "Absolute Apple Singularity", make_singularity_texture),
+        ("chaos_apple", "混沌苹果", "Chaos Apple", make_chaos_apple_texture),
+    ]
+    for item_id, zh, en, factory in specials:
+        factory().save(tex_item / f"{item_id}.png")
+        write_json(models_item / f"{item_id}.json", {
+            "parent": "item/generated",
+            "textures": {"layer0": f"{MOD_ID}:item/{item_id}"},
+        })
+        zh_lang[f"item.{MOD_ID}.{item_id}"] = zh
+        en_lang[f"item.{MOD_ID}.{item_id}"] = en
+        counts["item"] += 1
 
     # ---- 机器 GUI 底图 ------------------------------------------------------
     make_gui_texture().save(gui_dir / "apple_machine.png")

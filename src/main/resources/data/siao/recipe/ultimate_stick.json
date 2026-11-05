@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "ultimate",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_1x_apple"
+  },
+  "result": {
+    "id": "minecraft:stick",
+    "count": 1
+  },
+  "count": 1,
+  "enchant": "require"
+}

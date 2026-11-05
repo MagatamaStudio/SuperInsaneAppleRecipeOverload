@@ -102,6 +102,9 @@ public record SiaoCompressionRecipe(
             if (enchantMode == EnchantMode.REJECT && enchanted) {
                 return false;
             }
+            if (enchantMode == EnchantMode.REQUIRE && !enchanted) {
+                return false;
+            }
             // 混合输入拒绝：9 个格子里附魔状态必须一致
             if (uniformEnchant == null) {
                 uniformEnchant = enchanted;
@@ -148,10 +151,12 @@ public record SiaoCompressionRecipe(
 
     /** 附魔处理方式。 */
     public enum EnchantMode implements StringRepresentable {
-        /** 保留输入的附魔状态（压缩 / 装块用）。 */
+        /** 保留输入的附魔状态（压缩用）。 */
         PRESERVE("preserve"),
-        /** 附魔输入直接不匹配（拆分 / 拆块用，堵复制漏洞）。 */
-        REJECT("reject");
+        /** 附魔输入直接不匹配（拆分 / 装块用，堵复制漏洞）。 */
+        REJECT("reject"),
+        /** 必须附魔才匹配，产物不带附魔（终极木棍用）。 */
+        REQUIRE("require");
 
         public static final Codec<EnchantMode> CODEC = StringRepresentable.fromEnum(EnchantMode::values);
 

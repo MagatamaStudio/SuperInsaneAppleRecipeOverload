@@ -33,6 +33,14 @@ public final class SiaoItems {
     public static final DeferredItem<Item> SINGULARITY_SHARD =
             ITEMS.registerSimpleItem("singularity_shard");
 
+    /** 绝对苹果奇点：九重压缩苹果锭 ×1 的等价物，图腾级目标。 */
+    public static final DeferredItem<Item> SINGULARITY =
+            ITEMS.registerSimpleItem("singularity");
+
+    /** 混沌苹果：手动合成的展示物，不进 AE2 合成链（随机组件会卡死合成 CPU）。 */
+    public static final DeferredItem<Item> CHAOS_APPLE =
+            ITEMS.registerSimpleItem("chaos_apple");
+
     static {
         for (Material material : Material.values()) {
             for (int tier = 1; tier <= Material.MAX_TIER; tier++) {
@@ -104,6 +112,14 @@ public final class SiaoItems {
 
     public static DeferredItem<Item> singularityShard() {
         return SINGULARITY_SHARD;
+    }
+
+    public static DeferredItem<Item> singularity() {
+        return SINGULARITY;
+    }
+
+    public static DeferredItem<Item> chaosApple() {
+        return CHAOS_APPLE;
     }
 
     public static int blockItemCount() {

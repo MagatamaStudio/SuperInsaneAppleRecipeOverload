@@ -165,6 +165,37 @@ public final class SiaoSelfTest {
         check("自定义压缩配方装载数 = 540", loaded == 540L, loaded + " 条");
 
         machineCases(server);
+        phase6Cases(server, registries);
+    }
+
+    /** 阶段 6：奇点 / 混沌苹果 / 终极木棍。 */
+    private static void phase6Cases(MinecraftServer server, HolderLookup.Provider registries) {
+        ItemStack tier9Apple = new ItemStack(SiaoItems.unit(Material.APPLE, 9).get());
+        ItemStack singularity = new ItemStack(SiaoItems.singularity().get());
+        ItemStack tier1Apple = new ItemStack(SiaoItems.unit(Material.APPLE, 1).get());
+
+        // 奇点：九重压缩苹果锭 ×1
+        SiaoCompressionRecipe singularityRecipe = require(server, "siao:craft_singularity");
+        check("奇点：九重压缩苹果锭 → 绝对苹果奇点",
+                singularityRecipe.matches(single(tier9Apple), null), "不匹配");
+        ItemStack produced = singularityRecipe.assemble(single(tier9Apple), registries);
+        check("奇点：产物 = siao:singularity", sameItem(produced, singularity), describe(produced));
+
+        // 终极木棍：必须附魔，产物是木棍且不带附魔
+        SiaoCompressionRecipe ultimate = require(server, "siao:ultimate_stick");
+        ItemStack enchantedApple = tier1Apple.copy();
+        SiaoComponents.makeEnchanted(enchantedApple, 3);
+        check("终极木棍：普通苹果锭不匹配", !ultimate.matches(single(tier1Apple), null), "");
+        check("终极木棍：附魔苹果锭匹配", ultimate.matches(single(enchantedApple), null), "不匹配");
+        ItemStack stick = ultimate.assemble(single(enchantedApple), registries);
+        check("终极木棍：产物是 1 根木棍",
+                sameItem(stick, new ItemStack(Items.STICK)) && stick.getCount() == 1, describe(stick));
+        check("终极木棍：木棍不带附魔", !SiaoComponents.isEnchanted(stick), describe(stick));
+
+        // 混沌苹果：普通 shaped 配方，产物固定
+        check("混沌苹果：配方已装载",
+                server.getRecipeManager().byKey(ResourceLocation.parse("siao:craft_chaos_apple")).isPresent(),
+                "找不到 craft_chaos_apple");
     }
 
     /**

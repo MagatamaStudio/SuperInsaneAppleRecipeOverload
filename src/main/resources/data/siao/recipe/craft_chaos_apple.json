@@ -1,0 +1,42 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IGC",
+    "DAE",
+    "LQZ"
+  ],
+  "key": {
+    "I": {
+      "item": "siao:compressed_1x_iron"
+    },
+    "G": {
+      "item": "siao:compressed_1x_gold"
+    },
+    "C": {
+      "item": "siao:compressed_1x_copper"
+    },
+    "D": {
+      "item": "siao:compressed_1x_diamond"
+    },
+    "E": {
+      "item": "siao:compressed_1x_emerald"
+    },
+    "L": {
+      "item": "siao:compressed_1x_lapis"
+    },
+    "Q": {
+      "item": "siao:compressed_1x_quartz"
+    },
+    "Z": {
+      "item": "siao:compressed_1x_amethyst"
+    },
+    "A": {
+      "item": "minecraft:apple"
+    }
+  },
+  "result": {
+    "id": "siao:chaos_apple",
+    "count": 1
+  }
+}

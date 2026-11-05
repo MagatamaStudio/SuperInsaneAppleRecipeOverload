@@ -167,6 +167,31 @@ def main() -> None:
            {"A": "minecraft:amethyst_shard", "S": f"{MOD_ID}:singularity_shard"},
            f"{MOD_ID}:fission_upgrade")
 
+    # ---- 阶段 6：奇点 / 混沌苹果 / 终极木棍 ---------------------------------
+    # 绝对苹果奇点 = 九重压缩苹果锭 ×1（387,420,489 个苹果），方案 A 硬核
+    emit("craft_singularity", compression(
+        f"{MOD_ID}:compressed_9x_apple", f"{MOD_ID}:singularity", 1, 1, "singularity", "reject"))
+
+    # 终极木棍：附魔的一重压缩苹果锭 → 1 根木棍。整个模组的笑点兑现点。
+    emit("ultimate_stick", compression(
+        f"{MOD_ID}:compressed_1x_apple", "minecraft:stick", 1, 1, "ultimate", "require"))
+
+    # 混沌苹果：8 种不同材料的一重压缩单位围一个苹果
+    shaped("craft_chaos_apple",
+           ["IGC", "DAE", "LQZ"],
+           {
+               "I": f"{MOD_ID}:compressed_1x_iron",
+               "G": f"{MOD_ID}:compressed_1x_gold",
+               "C": f"{MOD_ID}:compressed_1x_copper",
+               "D": f"{MOD_ID}:compressed_1x_diamond",
+               "E": f"{MOD_ID}:compressed_1x_emerald",
+               "L": f"{MOD_ID}:compressed_1x_lapis",
+               "Q": f"{MOD_ID}:compressed_1x_quartz",
+               "Z": f"{MOD_ID}:compressed_1x_amethyst",
+               "A": "minecraft:apple",
+           },
+           f"{MOD_ID}:chaos_apple")
+
     print(f"配方文件: {written}")
 
 
