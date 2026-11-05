@@ -40,14 +40,17 @@ neoForge {
 }
 
 repositories {
+    // 本地离线仓库：AE2 api jar 也放这里，保证 --offline 构建不被打断
+    maven { name = 'LocalOffline'; url = uri('gradle/offline-repo') }
     mavenCentral()
     maven { name = 'NeoForged'; url = 'https://maven.neoforged.net/releases' }
-    // AE2（软依赖，后续阶段启用）
+    // AE2（软依赖）
     maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' }
 }
 
 dependencies {
-    // 阶段 4 才启用：compileOnly "maven.modrinth:ae2:19.2.18"
+    // AE2 只用到 appeng.api.*，api jar 足够；compileOnly 保证服务器/客户端没装 AE2 也能跑
+    compileOnly "org.appliedenergistics:appliedenergistics2:19.2.18:api"
 }
 
 tasks.withType(ProcessResources).configureEach {

@@ -1,6 +1,8 @@
 package com.siao.appleoverload;
 
+import com.siao.appleoverload.compat.Ae2Integration;
 import com.siao.appleoverload.machine.SiaoMachineRegistry;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
@@ -19,5 +21,11 @@ public final class SiaoCommonEvents {
                 (machine, side) -> machine.getItemHandlerFor(side));
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, SiaoMachineRegistry.MACHINE.get(),
                 (machine, side) -> machine.getEnergyStorage());
+
+        // 软依赖：装了 AE2 才注册它的能力。Ae2Integration 也只在这时才会被类加载，
+        // 所以没装 AE2 的整合包不会 NoClassDefFoundError。
+        if (ModList.get().isLoaded("ae2")) {
+            Ae2Integration.registerCapabilities(event);
+        }
     }
 }

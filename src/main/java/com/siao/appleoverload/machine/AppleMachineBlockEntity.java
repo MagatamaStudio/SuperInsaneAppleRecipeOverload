@@ -146,6 +146,34 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
                 machineKind.outputSlots(), false, true);
     }
 
+    /**
+     * AE2 整批推料：**全部放得下才放**，否则一点不动。
+     *
+     * <p>{@code ICraftingMachine#pushPattern} 的语义是「全有或全无」，
+     * 所以先模拟插一遍，确认能吃完再真插。</p>
+     */
+    public boolean acceptCraftingBatch(ItemStack batch) {
+        if (batch.isEmpty()) {
+            return false;
+        }
+        int start = machineKind.inputStart();
+
+        ItemStack remaining = batch.copy();
+        for (int slot = start; slot < start + machineKind.inputSlots() && !remaining.isEmpty(); slot++) {
+            remaining = inventory.insertItem(slot, remaining, true);
+        }
+        if (!remaining.isEmpty()) {
+            return false;
+        }
+
+        remaining = batch.copy();
+        for (int slot = start; slot < start + machineKind.inputSlots() && !remaining.isEmpty(); slot++) {
+            remaining = inventory.insertItem(slot, remaining, false);
+        }
+        setChanged();
+        return true;
+    }
+
     public SideMode sideMode(Direction side) {
         return sides[side.ordinal()];
     }
