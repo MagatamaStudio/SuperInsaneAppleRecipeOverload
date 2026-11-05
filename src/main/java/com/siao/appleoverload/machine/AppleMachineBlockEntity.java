@@ -175,7 +175,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
 
     private boolean tryOperation() {
         int cost = energyPerOperation();
-        if (energy.extractEnergy(cost, true) < cost) {
+        if (!energy.hasEnergy(cost)) {
             return false;
         }
         boolean processed = switch (machineKind) {
@@ -184,7 +184,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
             case CENTRIFUGE -> runCentrifuge();
         };
         if (processed) {
-            energy.extractEnergy(cost, false);
+            energy.consume(cost);
         }
         return processed;
     }
@@ -372,6 +372,15 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
     }
 
     private final class MachineEnergyStorage extends EnergyStorage {
+        /**
+         * @param capacity 缓冲上限
+         * @param transfer 每 tick 最多接受的 FE
+         *
+         * <p>⚠️ maxExtract 传 0 —— 机器不是电源，管道和玩家不该能从中抽电。
+         * 但 {@code IEnergyStorage#extractEnergy} 在 {@code canExtract()==false} 时
+         * <b>永远返回 0</b>，所以机器自己也抽不出电来加工。
+         * 内部耗能必须走 {@link #consume(int)} 直接改缓冲，不能走 IEnergyStorage 语义。</p>
+         */
         private MachineEnergyStorage(int capacity, int transfer) {
             super(capacity, transfer, 0);
         }
@@ -383,6 +392,15 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
                 setChanged();
             }
             return received;
+        }
+
+        private boolean hasEnergy(int amount) {
+            return this.energy >= amount;
+        }
+
+        private void consume(int amount) {
+            this.energy = Math.max(0, this.energy - amount);
+            setChanged();
         }
     }
 }
