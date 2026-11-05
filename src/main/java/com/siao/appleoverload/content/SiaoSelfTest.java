@@ -159,10 +159,11 @@ public final class SiaoSelfTest {
                 describe(unpacked));
 
         // ---- 全量配方装载检查 ----------------------------------------------
+        // 540 = 压缩链（12 材料 + 3 粗形态）× 9 重 × 4 类；另外 2 条是奇点与终极木棍
         long loaded = server.getRecipeManager().getRecipes().stream()
                 .filter(holder -> holder.value() instanceof SiaoCompressionRecipe)
                 .count();
-        check("自定义压缩配方装载数 = 540", loaded == 540L, loaded + " 条");
+        check("自定义压缩配方装载数 = 542", loaded == 542L, loaded + " 条");
 
         machineCases(server);
         phase6Cases(server, registries);
