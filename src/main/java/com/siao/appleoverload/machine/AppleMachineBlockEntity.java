@@ -1,5 +1,6 @@
 package com.siao.appleoverload.machine;
 
+import com.siao.appleoverload.config.SiaoConfig;
 import com.siao.appleoverload.content.Material;
 import com.siao.appleoverload.content.SiaoComponents;
 import com.siao.appleoverload.content.SiaoCompressedItem;
