@@ -1,0 +1,11 @@
+# 统一换行：仓库里存 LF，Windows 检出也能用
+* text=auto
+
+# gradlew 必须是 LF，否则 Linux CI 上 shebang 会带 \r 而报 "bad interpreter"
+gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+
+# 二进制资源别做换行转换
+*.png binary
+*.jar binary

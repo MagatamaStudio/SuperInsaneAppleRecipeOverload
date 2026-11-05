@@ -1,0 +1,561 @@
+#!/usr/bin/env python3
+"""SIAO 资源生成器。
+
+从 mc-assets/ 的原版物品渲染图出发，程序化生成：
+  * 物品贴图  assets/siao/textures/item/*.png
+  * 方块贴图  assets/siao/textures/block/*.png
+  * 物品模型 / 方块模型 / blockstate
+  * 中英文 lang
+
+用法：  python tools/gen_assets.py [--clean]
+
+设计要点：
+  * 物品：以原版渲染图为底，按「重数」向上叠印副本 + 逐级压暗，表达「压了很多层」。
+  * 方块：原版方块渲染图是等轴视图，不能直接当六面贴图用；改为取其平均色，
+          再画 3×3 压制格 + 重数指示点（第 N 重点亮 N 个格）。
+  * 全部在构建期生成并入库，运行期零 tint 代码。
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import shutil
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
+
+ROOT = Path(__file__).resolve().parent.parent
+ASSETS_SRC = ROOT / "mc-assets" / "item-assets"
+RES = ROOT / "src" / "main" / "resources" / "assets" / "siao"
+
+MOD_ID = "siao"
+MAX_TIER = 9
+
+# 物品贴图分辨率。128 足够清楚，又能把仓库体积压下来。
+ITEM_SIZE = 128
+BLOCK_SIZE = 64
+
+ZH_TIERS = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
+
+# id, 中文单位名, 英文单位名, 物品底图, 方块底图(None = 由物品底图取色)
+MATERIALS = [
+    ("iron",      "铁锭",       "Iron Ingot",      "IRON_INGOT",         "IRON_BLOCK",      True),
+    ("gold",      "金锭",       "Gold Ingot",      "GOLD_INGOT",         "GOLD_BLOCK",      True),
+    ("copper",    "铜锭",       "Copper Ingot",    "COPPER_INGOT",       "COPPER_BLOCK",    True),
+    ("netherite", "下界合金锭", "Netherite Ingot", "NETHERITE_INGOT",    "NETHERITE_BLOCK", False),
+    ("diamond",   "钻石",       "Diamond",         "DIAMOND",            "DIAMOND_BLOCK",   False),
+    ("emerald",   "绿宝石",     "Emerald",         "EMERALD",            "EMERALD_BLOCK",   False),
+    ("lapis",     "青金石",     "Lapis Lazuli",    "LAPIS_LAZULI",       "LAPIS_BLOCK",     False),
+    ("amethyst",  "紫水晶",     "Amethyst Shard",  "AMETHYST_SHARD",     "AMETHYST_BLOCK",  False),
+    ("quartz",    "下界石英",   "Nether Quartz",   "QUARTZ",             "QUARTZ_BLOCK",    False),
+    ("coal",      "煤",         "Coal",            "COAL",               "COAL_BLOCK",      False),
+    ("redstone",  "红石",       "Redstone",        "REDSTONE",           "REDSTONE_BLOCK",  False),
+    ("apple",     "苹果锭",     "Apple Ingot",     "APPLE",              None,              False),
+]
+
+RAW_BASE = {"iron": "RAW_IRON", "gold": "RAW_GOLD", "copper": "RAW_COPPER"}
+RAW_BLOCK_BASE = {"iron": "RAW_IRON_BLOCK", "gold": "RAW_GOLD_BLOCK", "copper": "RAW_COPPER_BLOCK"}
+
+
+# --------------------------------------------------------------------------- 贴图
+
+def load_base(name: str, size: int) -> Image.Image:
+    path = ASSETS_SRC / f"{name}.png"
+    if not path.exists():
+        raise SystemExit(f"缺少底图: {path}")
+    img = Image.open(path).convert("RGBA")
+    return img.resize((size, size), Image.LANCZOS)
+
+
+def load_icon(name: str, size: int) -> Image.Image:
+    """裁掉原版渲染图的空白边缘后按比例缩放到 size 见方，让图标占满可用空间。"""
+    path = ASSETS_SRC / f"{name}.png"
+    if not path.exists():
+        raise SystemExit(f"缺少底图: {path}")
+    img = Image.open(path).convert("RGBA")
+    bbox = img.getbbox()
+    if bbox:
+        img = img.crop(bbox)
+    img.thumbnail((size, size), Image.LANCZOS)
+    return img
+
+
+def average_color(img: Image.Image) -> tuple[int, int, int]:
+    """按 alpha 加权求平均色。"""
+    px = list(img.convert("RGBA").resize((32, 32), Image.LANCZOS).getdata())
+    total = [0.0, 0.0, 0.0]
+    weight = 0.0
+    for r, g, b, a in px:
+        if a < 16:
+            continue
+        w = a / 255.0
+        total[0] += r * w
+        total[1] += g * w
+        total[2] += b * w
+        weight += w
+    if weight == 0:
+        return (128, 128, 128)
+    return (int(total[0] / weight), int(total[1] / weight), int(total[2] / weight))
+
+
+# 重数徽章配色：1 级白金 → 4 级金 → 7 级橙红 → 9 级紫
+TIER_COLORS = [
+    (236, 240, 245),
+    (222, 232, 240),
+    (250, 232, 160),
+    (250, 210, 110),
+    (248, 186, 84),
+    (245, 158, 66),
+    (240, 120, 60),
+    (214, 96, 150),
+    (176, 108, 236),
+]
+
+# 九重的辉光色，与徽章同色系
+GLOW_COLOR = (186, 126, 250)
+
+
+def pick_font(px: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    for name in ("arialbd.ttf", "seguisb.ttf", "arial.ttf"):
+        try:
+            return ImageFont.truetype(name, px)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
+def make_item_texture(base_name: str, tier: int) -> Image.Image:
+    """扇形堆叠 tier 个图标 + 右下角重数徽章，九重额外加发光。
+
+    第 N 重就是「N 个叠在一起」——视觉语义与玩法语义完全一致，
+    一眼就能看出重数，也不会再被误认成原版物品。
+    """
+    size = ITEM_SIZE
+    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    content = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+
+    n = tier
+    step = max(3, size // 24)                       # 每层错位
+    badge = int(size * 0.30)                        # 徽章边长
+    usable = size - badge // 2 - 4                  # 给徽章留位置
+    # 九重要在四周留出辉光余量，否则光晕会被画布边缘裁掉
+    fit = 0.86 if tier == MAX_TIER else 0.96
+    icon_side = int((usable - (n - 1) * step) * fit)
+
+    icon = load_icon(base_name, max(16, icon_side))
+    group = (n - 1) * step + max(icon.size)
+    ox = (size - group) // 2
+    oy = (size - group) // 2 - int(size * 0.05)
+
+    for i in range(n):
+        x = ox + i * step
+        y = oy + (n - 1 - i) * step
+        layer = icon
+        if i < n - 1:
+            # 越靠下层越暗，制造深度；不要阴影
+            factor = 0.42 + 0.58 * (i / max(1, n - 1))
+            layer = ImageEnhance.Brightness(icon).enhance(factor)
+            alpha = layer.getchannel("A").point(lambda a: int(a * 0.92))
+            layer = layer.copy()
+            layer.putalpha(alpha)
+        content.alpha_composite(layer, (x, y))
+
+    # 九重：内容轮廓外扩两层辉光，垫在内容底下
+    if tier == MAX_TIER:
+        alpha = content.getchannel("A")
+        for radius, strength in ((max(2, size // 22), 0.55), (max(1, size // 40), 0.85)):
+            mask = alpha.filter(ImageFilter.GaussianBlur(radius))
+            glow = Image.new("RGBA", (size, size), GLOW_COLOR + (0,))
+            glow.putalpha(mask.point(lambda a, s=strength: int(a * s)))
+            canvas.alpha_composite(glow)
+
+    canvas.alpha_composite(content)
+
+    # 重数徽章
+    draw = ImageDraw.Draw(canvas)
+    bx = size - badge - 1
+    by = size - badge - 1
+    color = TIER_COLORS[min(tier, 9) - 1]
+    draw.rounded_rectangle([bx, by, size - 1, size - 1], radius=max(3, badge // 5),
+                           fill=(18, 18, 22, 225), outline=color, width=max(1, size // 64))
+    font = pick_font(int(badge * 0.70))
+    text = str(tier)
+    tb = draw.textbbox((0, 0), text, font=font)
+    tx = bx + (badge - (tb[2] - tb[0])) / 2 - tb[0]
+    ty = by + (badge - (tb[3] - tb[1])) / 2 - tb[1]
+    draw.text((tx, ty), text, font=font, fill=color)
+
+    return canvas
+
+
+def make_block_texture(color: tuple[int, int, int], tier: int) -> Image.Image:
+    """3×3 压制格 + 重数指示：第 N 重点亮 N 个格。"""
+    r, g, b = color
+    img = Image.new("RGBA", (BLOCK_SIZE, BLOCK_SIZE), (r, g, b, 255))
+    draw = ImageDraw.Draw(img)
+
+    margin = max(2, BLOCK_SIZE // 16)
+    inner = BLOCK_SIZE - margin * 2
+    cell = inner // 3
+    gap = max(1, BLOCK_SIZE // 32)
+
+    lit = tier
+    for row in range(3):
+        for col in range(3):
+            idx = row * 3 + col + 1
+            x0 = margin + col * cell + gap
+            y0 = margin + row * cell + gap
+            x1 = margin + (col + 1) * cell - gap - 1
+            y1 = margin + (row + 1) * cell - gap - 1
+            if idx <= lit:
+                f = 1.25 - 0.04 * tier
+                fill = (min(255, int(r * f)), min(255, int(g * f)), min(255, int(b * f)), 255)
+                # 左上高光、右下阴影，做出浮雕
+                draw.rectangle([x0, y0, x1, y1], fill=fill,
+                               outline=(min(255, int(r * 1.5)), min(255, int(g * 1.5)), min(255, int(b * 1.5)), 255))
+            else:
+                fill = (int(r * 0.55), int(g * 0.55), int(b * 0.55), 255)
+                draw.rectangle([x0, y0, x1, y1], fill=fill)
+
+    # 外框随重数加深
+    edge = (int(r * 0.35), int(g * 0.35), int(b * 0.35), 255)
+    draw.rectangle([0, 0, BLOCK_SIZE - 1, BLOCK_SIZE - 1], outline=edge, width=max(1, BLOCK_SIZE // 32))
+    return img
+
+
+# --------------------------------------------------------------------------- 机器 / 升级 / GUI
+
+# 与 Java 端 MachineLayout 一一对应，改一边必须改另一边
+LAYOUT = {
+    "width": 176, "height": 200, "slot": 18,
+    "input_x": 34, "input_y": 17,
+    "output_x": 118, "output_y": 17,
+    "energy_x": 8, "energy_y": 17, "energy_w": 14, "energy_h": 52,
+    "arrow_x": 94, "arrow_y": 40, "arrow_w": 20, "arrow_h": 8,
+    "upgrade_x": 34, "upgrade_y": 76, "upgrade_cols": 4,
+    "player_x": 8, "player_y": 116, "hotbar_y": 174,
+}
+
+MACHINES = [
+    ("compressor", "苹果压缩机", "Apple Compressor", (74, 128, 196), (120, 190, 255)),
+    ("enchanter", "苹果附魔台", "Apple Enchanter", (146, 96, 206), (206, 150, 255)),
+    ("centrifuge", "苹果离心机", "Apple Centrifuge", (72, 158, 128), (130, 236, 180)),
+]
+
+UPGRADES = [
+    ("speed", "速度升级", "Speed Upgrade", (90, 200, 255), False),
+    ("energy", "能量升级", "Energy Upgrade", (255, 200, 70), False),
+    ("parallel", "并行升级", "Parallel Upgrade", (140, 230, 140), False),
+    ("anchor", "锚定升级", "Anchor Upgrade", (170, 170, 190), False),
+    ("overclock", "超频核心", "Overclock Core", (255, 120, 90), True),
+    ("quantum", "量子核心", "Quantum Core", (180, 120, 255), True),
+    ("fission", "裂变核心", "Fission Core", (120, 255, 180), True),
+]
+
+
+def make_machine_texture(base: tuple[int, int, int], accent: tuple[int, int, int]) -> Image.Image:
+    s = BLOCK_SIZE
+    img = Image.new("RGBA", (s, s), base + (255,))
+    draw = ImageDraw.Draw(img)
+    margin = max(3, s // 12)
+
+    draw.rectangle([0, 0, s - 1, s - 1], outline=(20, 20, 24, 255), width=max(2, s // 32))
+    draw.rounded_rectangle([margin, margin, s - margin - 1, s - margin - 1],
+                           radius=max(2, s // 16), fill=(38, 38, 46, 255),
+                           outline=accent + (255,), width=max(1, s // 32))
+
+    rivet = max(1, s // 28)
+    for x, y in ((margin + rivet + 2, margin + rivet + 2),
+                 (s - margin - rivet - 3, margin + rivet + 2),
+                 (margin + rivet + 2, s - margin - rivet - 3),
+                 (s - margin - rivet - 3, s - margin - rivet - 3)):
+        draw.ellipse([x - rivet, y - rivet, x + rivet, y + rivet], fill=(150, 150, 160, 255))
+
+    center = s // 2
+    radius = max(4, s // 7)
+    draw.ellipse([center - radius, center - radius, center + radius, center + radius],
+                 fill=accent + (255,), outline=(255, 255, 255, 220))
+    draw.ellipse([center - radius // 3, center - radius // 3,
+                  center + radius // 3, center + radius // 3], fill=(255, 255, 255, 190))
+    return img
+
+
+def make_core_texture(color: tuple[int, int, int], advanced: bool) -> Image.Image:
+    size = ITEM_SIZE
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    center = size / 2
+    outer = size * 0.44
+
+    draw.ellipse([center - outer, center - outer, center + outer, center + outer],
+                 fill=(28, 28, 34, 235), outline=(10, 10, 12, 255), width=max(2, size // 48))
+    if advanced:
+        draw.ellipse([center - outer + 3, center - outer + 3, center + outer - 3, center + outer - 3],
+                     outline=color + (255,), width=max(2, size // 40))
+
+    inner = outer * 0.62
+    points = [(center + inner * math.cos(math.pi / 3 * i - math.pi / 6),
+               center + inner * math.sin(math.pi / 3 * i - math.pi / 6)) for i in range(6)]
+    draw.polygon(points, fill=color + (255,), outline=(255, 255, 255, 225))
+    highlight = inner // 3
+    draw.ellipse([center - highlight, center - highlight, center + highlight, center + highlight],
+                 fill=(255, 255, 255, 170))
+    return img
+
+
+def make_shard_texture() -> Image.Image:
+    size = ITEM_SIZE
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    center = size // 2
+    top = (center, int(size * 0.08))
+    left = (int(size * 0.20), int(size * 0.58))
+    right = (int(size * 0.80), int(size * 0.58))
+    bottom = (center, int(size * 0.92))
+    draw.polygon([top, right, bottom, left], fill=(176, 108, 236, 255), outline=(238, 220, 255, 255))
+    draw.line([top, bottom], fill=(255, 255, 255, 150), width=max(1, size // 48))
+    draw.line([left, right], fill=(255, 255, 255, 90), width=max(1, size // 64))
+    return img
+
+
+def slot_boxes() -> list[tuple[int, int]]:
+    boxes = []
+    for i in range(9):
+        boxes.append((LAYOUT["input_x"] + (i % 3) * LAYOUT["slot"],
+                      LAYOUT["input_y"] + (i // 3) * LAYOUT["slot"]))
+    for i in range(3):
+        boxes.append((LAYOUT["output_x"], LAYOUT["output_y"] + i * LAYOUT["slot"]))
+    for i in range(8):
+        boxes.append((LAYOUT["upgrade_x"] + (i % LAYOUT["upgrade_cols"]) * LAYOUT["slot"],
+                      LAYOUT["upgrade_y"] + (i // LAYOUT["upgrade_cols"]) * LAYOUT["slot"]))
+    for row in range(3):
+        for column in range(9):
+            boxes.append((LAYOUT["player_x"] + column * LAYOUT["slot"],
+                          LAYOUT["player_y"] + row * LAYOUT["slot"]))
+    for column in range(9):
+        boxes.append((LAYOUT["player_x"] + column * LAYOUT["slot"], LAYOUT["hotbar_y"]))
+    return boxes
+
+
+def make_gui_texture() -> Image.Image:
+    img = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    width, height = LAYOUT["width"], LAYOUT["height"]
+
+    draw.rectangle([0, 0, width - 1, height - 1], fill=(198, 198, 198, 255))
+    draw.rectangle([0, 0, width - 1, height - 1], outline=(52, 52, 58, 255), width=2)
+    draw.rectangle([3, 3, width - 4, height - 4], outline=(160, 160, 165, 255), width=1)
+
+    for x, y in slot_boxes():
+        draw.rectangle([x - 1, y - 1, x + 16, y + 16], fill=(139, 139, 139, 255),
+                       outline=(55, 55, 55, 255))
+        draw.rectangle([x, y, x + 15, y + 15], fill=(96, 96, 96, 255))
+
+    ex, ey = LAYOUT["energy_x"], LAYOUT["energy_y"]
+    ew, eh = LAYOUT["energy_w"], LAYOUT["energy_h"]
+    draw.rectangle([ex, ey, ex + ew - 1, ey + eh - 1], fill=(40, 40, 44, 255),
+                   outline=(55, 55, 55, 255))
+
+    ax, ay = LAYOUT["arrow_x"], LAYOUT["arrow_y"]
+    aw, ah = LAYOUT["arrow_w"], LAYOUT["arrow_h"]
+    draw.rectangle([ax, ay, ax + aw - 1, ay + ah - 1], fill=(70, 70, 70, 255),
+                   outline=(55, 55, 55, 255))
+
+    title_w = 96
+    draw.line([LAYOUT["player_x"], LAYOUT["player_y"] - 13,
+               LAYOUT["player_x"] + title_w, LAYOUT["player_y"] - 13], fill=(120, 120, 125, 255))
+    return img
+
+
+# --------------------------------------------------------------------------- 数据
+
+def unit_id(material: str, tier: int) -> str:
+    return f"compressed_{tier}x_{material}"
+
+
+def unit_block_id(material: str, tier: int) -> str:
+    return f"{unit_id(material, tier)}_block"
+
+
+def raw_unit_id(material: str, tier: int) -> str:
+    return f"compressed_{tier}x_raw_{material}"
+
+
+def raw_block_id(material: str, tier: int) -> str:
+    return f"{raw_unit_id(material, tier)}_block"
+
+
+def zh_unit(zh: str, tier: int) -> str:
+    return f"{ZH_TIERS[tier]}重压缩{zh}"
+
+
+def zh_raw(zh: str, tier: int) -> str:
+    stem = zh[:-1] if zh.endswith("锭") else zh
+    return f"{ZH_TIERS[tier]}重压缩粗{stem}"
+
+
+def num_prefix(tier: int) -> str:
+    return f"{tier}x "
+
+
+def en_raw(en: str) -> str:
+    return en[:-5].strip() if en.endswith("Ingot") else en
+
+
+# --------------------------------------------------------------------------- 主流程
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--clean", action="store_true", help="先清空已生成的资源目录")
+    args = parser.parse_args()
+
+    tex_item = RES / "textures" / "item"
+    tex_block = RES / "textures" / "block"
+    models_item = RES / "models" / "item"
+    models_block = RES / "models" / "block"
+    blockstates = RES / "blockstates"
+    lang_dir = RES / "lang"
+    gui_dir = RES / "textures" / "gui"
+    loot_dir = ROOT / "src" / "main" / "resources" / "data" / "siao" / "loot_table" / "blocks"
+
+    if args.clean:
+        for d in (tex_item, tex_block, models_item, models_block, blockstates, gui_dir, loot_dir):
+            if d.exists():
+                shutil.rmtree(d)
+
+    for d in (tex_item, tex_block, models_item, models_block, blockstates, lang_dir, gui_dir, loot_dir):
+        d.mkdir(parents=True, exist_ok=True)
+
+    zh_lang: dict[str, str] = {
+        "itemGroup.siao.main": "超级疯狂的苹果配方超载",
+        "tooltip.siao.equivalent": "相当于 %s 个%s",
+        "prefix.siao.enchanted": "附魔",
+    }
+    en_lang: dict[str, str] = {
+        "itemGroup.siao.main": "Super Insane Apple Overload",
+        "tooltip.siao.equivalent": "Equivalent to %s \u00d7 %s",
+        "prefix.siao.enchanted": "Enchanted ",
+    }
+
+    def write_json(path: Path, data: dict) -> None:
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    def emit_item(texture_id: str, base_name: str, tier: int, zh: str, en: str) -> None:
+        make_item_texture(base_name, tier).save(tex_item / f"{texture_id}.png")
+        write_json(models_item / f"{texture_id}.json", {
+            "parent": "item/generated",
+            "textures": {"layer0": f"{MOD_ID}:item/{texture_id}"},
+        })
+        zh_lang[f"item.{MOD_ID}.{texture_id}"] = zh
+        en_lang[f"item.{MOD_ID}.{texture_id}"] = en
+
+    def emit_block(block_id: str, color: tuple[int, int, int], tier: int, zh: str, en: str) -> None:
+        make_block_texture(color, tier).save(tex_block / f"{block_id}.png")
+        write_json(models_block / f"{block_id}.json", {
+            "parent": "block/cube_all",
+            "textures": {"all": f"{MOD_ID}:block/{block_id}"},
+        })
+        write_json(blockstates / f"{block_id}.json", {
+            "variants": {"": {"model": f"{MOD_ID}:block/{block_id}"}},
+        })
+        write_json(models_item / f"{block_id}.json", {
+            "parent": f"{MOD_ID}:block/{block_id}",
+        })
+        zh_lang[f"block.{MOD_ID}.{block_id}"] = zh
+        en_lang[f"block.{MOD_ID}.{block_id}"] = en
+        block_ids.append(block_id)
+
+    block_ids: list[str] = []
+    counts = {"item": 0, "block": 0}
+
+    for mat_id, zh, en, item_base, block_base, has_raw in MATERIALS:
+        color = average_color(load_base(block_base or item_base, 64))
+        zh_lang[f"material.siao.{mat_id}"] = zh
+        en_lang[f"material.siao.{mat_id}"] = en
+        for tier in range(1, MAX_TIER + 1):
+            emit_item(unit_id(mat_id, tier), item_base, tier,
+                      zh_unit(zh, tier), f"{num_prefix(tier)}Compressed {en}")
+            counts["item"] += 1
+            emit_block(unit_block_id(mat_id, tier), color, tier,
+                       zh_unit(zh, tier) + "块", f"{num_prefix(tier)}Compressed {en} Block")
+            counts["block"] += 1
+
+        if has_raw:
+            raw_zh = zh[:-1] if zh.endswith("锭") else zh
+            raw_en = en_raw(en)
+            raw_color = average_color(load_base(RAW_BLOCK_BASE[mat_id], 64))
+            for tier in range(1, MAX_TIER + 1):
+                emit_item(raw_unit_id(mat_id, tier), RAW_BASE[mat_id], tier,
+                          zh_raw(zh, tier), f"{num_prefix(tier)}Compressed Raw {raw_en}")
+                counts["item"] += 1
+                emit_block(raw_block_id(mat_id, tier), raw_color, tier,
+                           zh_raw(zh, tier) + "块", f"{num_prefix(tier)}Compressed Raw {raw_en} Block")
+                counts["block"] += 1
+
+    # ---- 机器 ---------------------------------------------------------------
+    for machine_id, zh, en, base, accent in MACHINES:
+        block_id = f"apple_{machine_id}"
+        make_machine_texture(base, accent).save(tex_block / f"{block_id}.png")
+        write_json(models_block / f"{block_id}.json", {
+            "parent": "block/cube_all",
+            "textures": {"all": f"{MOD_ID}:block/{block_id}"},
+        })
+        write_json(blockstates / f"{block_id}.json", {
+            "variants": {"": {"model": f"{MOD_ID}:block/{block_id}"}},
+        })
+        write_json(models_item / f"{block_id}.json", {"parent": f"{MOD_ID}:block/{block_id}"})
+        zh_lang[f"block.{MOD_ID}.{block_id}"] = zh
+        en_lang[f"block.{MOD_ID}.{block_id}"] = en
+        block_ids.append(block_id)
+        counts["block"] += 1
+
+    # ---- 升级物品 -----------------------------------------------------------
+    for upgrade_id, zh, en, color, advanced in UPGRADES:
+        item_id = f"{upgrade_id}_upgrade"
+        make_core_texture(color, advanced).save(tex_item / f"{item_id}.png")
+        write_json(models_item / f"{item_id}.json", {
+            "parent": "item/generated",
+            "textures": {"layer0": f"{MOD_ID}:item/{item_id}"},
+        })
+        zh_lang[f"item.{MOD_ID}.{item_id}"] = zh
+        en_lang[f"item.{MOD_ID}.{item_id}"] = en
+        counts["item"] += 1
+
+    # ---- 奇点碎片 -----------------------------------------------------------
+    make_shard_texture().save(tex_item / "singularity_shard.png")
+    write_json(models_item / "singularity_shard.json", {
+        "parent": "item/generated",
+        "textures": {"layer0": f"{MOD_ID}:item/singularity_shard"},
+    })
+    zh_lang[f"item.{MOD_ID}.singularity_shard"] = "奇点碎片"
+    en_lang[f"item.{MOD_ID}.singularity_shard"] = "Singularity Shard"
+    counts["item"] += 1
+
+    # ---- 机器 GUI 底图 ------------------------------------------------------
+    make_gui_texture().save(gui_dir / "apple_machine.png")
+
+    # ---- 战利品表（没有它，挖方块什么都不掉）--------------------------------
+    for block_id in block_ids:
+        write_json(loot_dir / f"{block_id}.json", {
+            "type": "minecraft:block",
+            "pools": [{
+                "rolls": 1.0,
+                "bonus_rolls": 0.0,
+                "entries": [{"type": "minecraft:item", "name": f"{MOD_ID}:{block_id}"}],
+                "conditions": [{"condition": "minecraft:survives_explosion"}],
+            }],
+        })
+
+    write_json(lang_dir / "zh_cn.json", dict(sorted(zh_lang.items())))
+    write_json(lang_dir / "en_us.json", dict(sorted(en_lang.items())))
+
+    print(f"物品贴图/模型 : {counts['item']}")
+    print(f"方块贴图/模型 : {counts['block']}")
+    print(f"战利品表      : {len(block_ids)}")
+    print(f"lang 条目     : {len(zh_lang)}")
+
+
+if __name__ == "__main__":
+    main()

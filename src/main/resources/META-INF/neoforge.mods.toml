@@ -1,0 +1,35 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "${mod_license}"
+issueTrackerURL = "https://github.com/SuperInsaneAppleRecipeOverload/issues"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${mod_version}"
+displayName = "${mod_name}"
+authors = "${mod_authors}"
+description = '''
+Everything can be compressed. Even the apple. Especially the apple.
+九个苹果压成一个，一直压到九重，再拿去换一根木棍。
+'''
+
+[[dependencies.${mod_id}]]
+modId = "neoforge"
+type = "required"
+versionRange = "[${neo_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "minecraft"
+type = "required"
+versionRange = "[${minecraft_version}]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "ae2"
+type = "optional"
+versionRange = "[19.2.0,)"
+ordering = "AFTER"
+side = "BOTH"

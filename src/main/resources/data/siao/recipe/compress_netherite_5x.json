@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_netherite",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_4x_netherite"
+  },
+  "result": {
+    "id": "siao:compressed_5x_netherite",
+    "count": 1
+  },
+  "count": 9,
+  "enchant": "preserve"
+}

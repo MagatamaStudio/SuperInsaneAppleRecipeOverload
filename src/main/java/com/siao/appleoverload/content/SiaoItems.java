@@ -1,0 +1,113 @@
+package com.siao.appleoverload.content;
+
+import com.siao.appleoverload.SiaoMod;
+import com.siao.appleoverload.upgrade.SiaoUpgradeItem;
+import com.siao.appleoverload.upgrade.UpgradeKind;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.neoforged.neoforge.registries.DeferredBlock;
+import net.neoforged.neoforge.registries.DeferredItem;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * 全部物品注册（含方块对应的 BlockItem）。
+ *
+ * <p>注册顺序即创造栏顺序：压缩单位 → 粗形态单位 → 压缩块。</p>
+ */
+public final class SiaoItems {
+
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(SiaoMod.MOD_ID);
+
+    private static final Map<String, DeferredItem<Item>> UNITS = new LinkedHashMap<>();
+    private static final Map<String, DeferredItem<Item>> RAW_UNITS = new LinkedHashMap<>();
+    private static final Map<String, DeferredItem<BlockItem>> BLOCK_ITEMS = new LinkedHashMap<>();
+    private static final Map<UpgradeKind, DeferredItem<SiaoUpgradeItem>> UPGRADES = new EnumMap<>(UpgradeKind.class);
+
+    /** 奇点碎片：离心机从附魔压缩单位里回收出来的东西。 */
+    public static final DeferredItem<Item> SINGULARITY_SHARD =
+            ITEMS.registerSimpleItem("singularity_shard");
+
+    static {
+        for (Material material : Material.values()) {
+            for (int tier = 1; tier <= Material.MAX_TIER; tier++) {
+                String unitId = SiaoNames.unitId(material, tier);
+                UNITS.put(unitId, ITEMS.registerItem(unitId, SiaoCompressedItem::new));
+
+                if (material.hasRawForm()) {
+                    String rawId = SiaoNames.rawUnitId(material, tier);
+                    RAW_UNITS.put(rawId, ITEMS.registerItem(rawId, SiaoCompressedItem::new));
+                }
+            }
+        }
+
+        for (UpgradeKind kind : UpgradeKind.values()) {
+            UPGRADES.put(kind, ITEMS.registerItem(kind.id() + "_upgrade",
+                    properties -> new SiaoUpgradeItem(kind, properties)));
+        }
+    }
+
+    private SiaoItems() {
+    }
+
+    /** 由 {@link SiaoBlocks} 在注册方块后回调，保证 BlockItem 与方块同名。 */
+    static DeferredItem<BlockItem> registerBlockItem(String id, DeferredBlock<Block> block) {
+        DeferredItem<BlockItem> item = ITEMS.registerSimpleBlockItem(block);
+        BLOCK_ITEMS.put(id, item);
+        return item;
+    }
+
+    public static Collection<DeferredItem<Item>> units() {
+        return UNITS.values();
+    }
+
+    public static Collection<DeferredItem<Item>> rawUnits() {
+        return RAW_UNITS.values();
+    }
+
+    public static Collection<DeferredItem<BlockItem>> blockItems() {
+        return BLOCK_ITEMS.values();
+    }
+
+    public static DeferredItem<Item> unit(Material material, int tier) {
+        return UNITS.get(SiaoNames.unitId(material, tier));
+    }
+
+    public static DeferredItem<Item> rawUnit(Material material, int tier) {
+        return RAW_UNITS.get(SiaoNames.rawUnitId(material, tier));
+    }
+
+    public static DeferredItem<BlockItem> blockItem(Material material, int tier) {
+        return BLOCK_ITEMS.get(SiaoNames.unitBlockId(material, tier));
+    }
+
+    public static int unitCount() {
+        return UNITS.size();
+    }
+
+    public static int rawUnitCount() {
+        return RAW_UNITS.size();
+    }
+
+    public static DeferredItem<SiaoUpgradeItem> upgrade(UpgradeKind kind) {
+        return UPGRADES.get(kind);
+    }
+
+    public static Collection<DeferredItem<SiaoUpgradeItem>> upgrades() {
+        return UPGRADES.values();
+    }
+
+    public static DeferredItem<Item> singularityShard() {
+        return SINGULARITY_SHARD;
+    }
+
+    public static int blockItemCount() {
+        return BLOCK_ITEMS.size();
+    }
+}
+

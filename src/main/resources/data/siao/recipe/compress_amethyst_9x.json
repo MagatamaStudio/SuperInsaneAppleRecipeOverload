@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_amethyst",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_8x_amethyst"
+  },
+  "result": {
+    "id": "siao:compressed_9x_amethyst",
+    "count": 1
+  },
+  "count": 9,
+  "enchant": "preserve"
+}

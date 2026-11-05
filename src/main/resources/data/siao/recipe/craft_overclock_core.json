@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GGG",
+    "GSG",
+    "GGG"
+  ],
+  "key": {
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "S": {
+      "item": "siao:singularity_shard"
+    }
+  },
+  "result": {
+    "id": "siao:overclock_upgrade",
+    "count": 1
+  }
+}

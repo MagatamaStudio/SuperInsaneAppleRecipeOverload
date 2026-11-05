@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_redstone",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_3x_redstone"
+  },
+  "result": {
+    "id": "siao:compressed_4x_redstone",
+    "count": 1
+  },
+  "count": 9,
+  "enchant": "preserve"
+}

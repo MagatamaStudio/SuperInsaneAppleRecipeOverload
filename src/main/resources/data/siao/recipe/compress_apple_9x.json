@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_apple",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_8x_apple"
+  },
+  "result": {
+    "id": "siao:compressed_9x_apple",
+    "count": 1
+  },
+  "count": 9,
+  "enchant": "preserve"
+}

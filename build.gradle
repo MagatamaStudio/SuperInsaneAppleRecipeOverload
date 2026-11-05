@@ -1,0 +1,73 @@
+plugins {
+    id 'java'
+    id 'net.neoforged.moddev' version '2.0.141'
+}
+
+version = mod_version
+group = mod_group
+base.archivesName = mod_id
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+neoForge {
+    version = '21.1.230'
+
+    runs {
+        client {
+            client()
+        }
+        server {
+            server()
+            // 自检：设环境变量 SIAO_SELFTEST=true 后 runServer，跑完自动关服
+            systemProperty 'siao.selftest', (System.getenv('SIAO_SELFTEST') ?: 'false')
+        }
+        data {
+            data()
+            programArguments.addAll '--mod', mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+    }
+
+    mods {
+        siao {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { name = 'NeoForged'; url = 'https://maven.neoforged.net/releases' }
+    // AE2（软依赖，后续阶段启用）
+    maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' }
+}
+
+dependencies {
+    // 阶段 4 才启用：compileOnly "maven.modrinth:ae2:19.2.18"
+}
+
+tasks.withType(ProcessResources).configureEach {
+    // 源文件是 UTF-8（含中文描述），expand 默认用平台编码读会读坏
+    filteringCharset = 'UTF-8'
+    var replaceProperties = [
+            minecraft_version: '1.21.1',
+            neo_version      : '21.1.230',
+            mod_id           : mod_id,
+            mod_name         : mod_name,
+            mod_version      : mod_version,
+            mod_authors      : mod_authors,
+            mod_license      : mod_license
+    ]
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/neoforge.mods.toml']) {
+        expand replaceProperties
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}

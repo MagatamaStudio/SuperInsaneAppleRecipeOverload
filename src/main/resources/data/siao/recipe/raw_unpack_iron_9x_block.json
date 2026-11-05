@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_iron_raw",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_9x_raw_iron_block"
+  },
+  "result": {
+    "id": "siao:compressed_9x_raw_iron",
+    "count": 9
+  },
+  "count": 1,
+  "enchant": "reject"
+}

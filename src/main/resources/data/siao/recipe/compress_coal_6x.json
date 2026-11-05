@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_coal",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_5x_coal"
+  },
+  "result": {
+    "id": "siao:compressed_6x_coal",
+    "count": 1
+  },
+  "count": 9,
+  "enchant": "preserve"
+}

@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_diamond",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_1x_diamond"
+  },
+  "result": {
+    "id": "minecraft:diamond",
+    "count": 9
+  },
+  "count": 1,
+  "enchant": "reject"
+}

@@ -1,0 +1,25 @@
+pluginManagement {
+    repositories {
+        // 本地离线插件仓库（用 gradle/setup-offline-repo.ps1 生成，不入库）
+        maven {
+            name = 'OfflinePlugins'
+            url = uri('gradle/offline-repo')
+        }
+        gradlePluginPortal()
+        maven { name = 'NeoForged'; url = 'https://maven.neoforged.net/releases' }
+    }
+}
+
+// 缺少离线插件仓库时给出可执行的提示，而不是让 Gradle 抛一堆解析异常。
+// 只在 --offline 构建时强制要求：CI 等有网环境直接走 plugin portal / neoforged maven。
+def offlineRepo = new File(settingsDir, 'gradle/offline-repo')
+if (!offlineRepo.isDirectory() && gradle.startParameter.isOffline()) {
+    throw new GradleException(
+        "缺少本地插件仓库 gradle/offline-repo/。\n" +
+        "请先执行： pwsh -File gradle/setup-offline-repo.ps1\n" +
+        "该脚本会拉取 ModDevGradle 及其依赖并落成本地 Maven 仓库，之后即可全程 --offline 构建。\n" +
+        "（有网环境去掉 --offline 即可跳过这个检查，CI 就是这么跑的。）"
+    )
+}
+
+rootProject.name = 'SuperInsaneAppleRecipeOverload'

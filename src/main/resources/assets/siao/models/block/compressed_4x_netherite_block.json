@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "siao:block/compressed_4x_netherite_block"
+  }
+}

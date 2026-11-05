@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_copper",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_1x_copper"
+  },
+  "result": {
+    "id": "siao:compressed_1x_copper_block",
+    "count": 1
+  },
+  "count": 9,
+  "enchant": "reject"
+}

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "NNN",
+    "NSN",
+    "NNN"
+  ],
+  "key": {
+    "N": {
+      "item": "minecraft:netherite_ingot"
+    },
+    "S": {
+      "item": "siao:singularity_shard"
+    }
+  },
+  "result": {
+    "id": "siao:quantum_upgrade",
+    "count": 1
+  }
+}
