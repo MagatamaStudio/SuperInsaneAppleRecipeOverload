@@ -16,7 +16,7 @@ Clash 没启动时 Gradle 会走代理并直接 `Connection refused`；而 `mave
 
 | 组件 | 位置 | 说明 |
 |---|---|---|
-| JDK 21 | `C:\Program Files\Java\jdk-21.0.10` | 已在 `gradle.properties` 的 `org.gradle.java.installations.paths` 里声明 |
+| JDK 21 | `C:\Program Files\Java\jdk-21.0.10` | 路径写在**用户级** `~/.gradle/gradle.properties`，**不要**写进项目（见下） |
 | Gradle 8.9 | `C:\gradle-8.9\gradle-8.9` + wrapper 已预置发行版 | `gradlew` 不会重新下载 |
 | ModDevGradle 2.0.141 | `gradle/offline-repo/` | **不入库**，用脚本重建，见下 |
 | NeoForge 21.1.230 | Gradle 缓存 | 含 userdev / sources / moddev-config |
@@ -37,6 +37,24 @@ pwsh -File gradle/setup-offline-repo.ps1
 拉完 `gradle/offline-repo/` 就是一个标准本地 Maven 仓库，`settings.gradle` 已经把它放在
 `pluginManagement` 的首位，之后一律 `--offline` 构建。
 如果目录缺失，`settings.gradle` 会直接抛出带修复命令的提示，不会给你一串解析异常。
+（这个检查**只在 `--offline` 时生效**，CI 有网就直接走 plugin portal。）
+
+## ⚠️ JDK 路径必须放用户级，不能进项目
+
+```powershell
+# 追加到 ~/.gradle/gradle.properties（不是项目里的那个）
+org.gradle.java.installations.paths=C\:\\Program Files\\Java\\jdk-21.0.10,C\:\\Program Files\\Zulu\\zulu-17
+```
+
+**为什么**：项目级 `gradle.properties` 会被 CI 一起读走，而 Linux runner 上 Gradle 把
+`org.gradle.java.installations.paths` 的值当 **URI** 解析，`C:\Program Files\...` 里的反斜杠
+直接抛：
+
+```
+java.net.URISyntaxException: Illegal character in opaque part at index 2: C:\Program Files\Java\jdk-21.0.10
+```
+
+整个 `createMinecraftArtifacts` 都进不去，CI 全红。踩过一次。
 
 ## 需要联网时才做的事
 
