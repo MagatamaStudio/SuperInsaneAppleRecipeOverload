@@ -1,0 +1,49 @@
+{
+  "values": {
+    "siao:compressed_1x_copper_block": {
+      "next_oxidation_stage": "siao:exposed_compressed_1x_copper"
+    },
+    "siao:compressed_1x_copper_cut": {
+      "next_oxidation_stage": "siao:exposed_compressed_1x_copper_cut"
+    },
+    "siao:compressed_1x_copper_polished": {
+      "next_oxidation_stage": "siao:exposed_compressed_1x_copper_polished"
+    },
+    "siao:compressed_1x_copper_grate": {
+      "next_oxidation_stage": "siao:exposed_compressed_1x_copper_grate"
+    },
+    "siao:compressed_1x_copper_chiseled": {
+      "next_oxidation_stage": "siao:exposed_compressed_1x_copper_chiseled"
+    },
+    "siao:exposed_compressed_1x_copper": {
+      "next_oxidation_stage": "siao:weathered_compressed_1x_copper"
+    },
+    "siao:exposed_compressed_1x_copper_cut": {
+      "next_oxidation_stage": "siao:weathered_compressed_1x_copper_cut"
+    },
+    "siao:exposed_compressed_1x_copper_polished": {
+      "next_oxidation_stage": "siao:weathered_compressed_1x_copper_polished"
+    },
+    "siao:exposed_compressed_1x_copper_grate": {
+      "next_oxidation_stage": "siao:weathered_compressed_1x_copper_grate"
+    },
+    "siao:exposed_compressed_1x_copper_chiseled": {
+      "next_oxidation_stage": "siao:weathered_compressed_1x_copper_chiseled"
+    },
+    "siao:weathered_compressed_1x_copper": {
+      "next_oxidation_stage": "siao:oxidized_compressed_1x_copper"
+    },
+    "siao:weathered_compressed_1x_copper_cut": {
+      "next_oxidation_stage": "siao:oxidized_compressed_1x_copper_cut"
+    },
+    "siao:weathered_compressed_1x_copper_polished": {
+      "next_oxidation_stage": "siao:oxidized_compressed_1x_copper_polished"
+    },
+    "siao:weathered_compressed_1x_copper_grate": {
+      "next_oxidation_stage": "siao:oxidized_compressed_1x_copper_grate"
+    },
+    "siao:weathered_compressed_1x_copper_chiseled": {
+      "next_oxidation_stage": "siao:oxidized_compressed_1x_copper_chiseled"
+    }
+  }
+}

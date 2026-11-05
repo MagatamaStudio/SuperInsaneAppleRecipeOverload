@@ -1,0 +1,64 @@
+{
+  "values": {
+    "siao:compressed_1x_copper_block": {
+      "waxed": "siao:compressed_1x_copper_waxed"
+    },
+    "siao:compressed_1x_copper_cut": {
+      "waxed": "siao:compressed_1x_copper_cut_waxed"
+    },
+    "siao:compressed_1x_copper_polished": {
+      "waxed": "siao:compressed_1x_copper_polished_waxed"
+    },
+    "siao:compressed_1x_copper_grate": {
+      "waxed": "siao:compressed_1x_copper_grate_waxed"
+    },
+    "siao:compressed_1x_copper_chiseled": {
+      "waxed": "siao:compressed_1x_copper_chiseled_waxed"
+    },
+    "siao:exposed_compressed_1x_copper": {
+      "waxed": "siao:exposed_compressed_1x_copper_waxed"
+    },
+    "siao:exposed_compressed_1x_copper_cut": {
+      "waxed": "siao:exposed_compressed_1x_copper_cut_waxed"
+    },
+    "siao:exposed_compressed_1x_copper_polished": {
+      "waxed": "siao:exposed_compressed_1x_copper_polished_waxed"
+    },
+    "siao:exposed_compressed_1x_copper_grate": {
+      "waxed": "siao:exposed_compressed_1x_copper_grate_waxed"
+    },
+    "siao:exposed_compressed_1x_copper_chiseled": {
+      "waxed": "siao:exposed_compressed_1x_copper_chiseled_waxed"
+    },
+    "siao:weathered_compressed_1x_copper": {
+      "waxed": "siao:weathered_compressed_1x_copper_waxed"
+    },
+    "siao:weathered_compressed_1x_copper_cut": {
+      "waxed": "siao:weathered_compressed_1x_copper_cut_waxed"
+    },
+    "siao:weathered_compressed_1x_copper_polished": {
+      "waxed": "siao:weathered_compressed_1x_copper_polished_waxed"
+    },
+    "siao:weathered_compressed_1x_copper_grate": {
+      "waxed": "siao:weathered_compressed_1x_copper_grate_waxed"
+    },
+    "siao:weathered_compressed_1x_copper_chiseled": {
+      "waxed": "siao:weathered_compressed_1x_copper_chiseled_waxed"
+    },
+    "siao:oxidized_compressed_1x_copper": {
+      "waxed": "siao:oxidized_compressed_1x_copper_waxed"
+    },
+    "siao:oxidized_compressed_1x_copper_cut": {
+      "waxed": "siao:oxidized_compressed_1x_copper_cut_waxed"
+    },
+    "siao:oxidized_compressed_1x_copper_polished": {
+      "waxed": "siao:oxidized_compressed_1x_copper_polished_waxed"
+    },
+    "siao:oxidized_compressed_1x_copper_grate": {
+      "waxed": "siao:oxidized_compressed_1x_copper_grate_waxed"
+    },
+    "siao:oxidized_compressed_1x_copper_chiseled": {
+      "waxed": "siao:oxidized_compressed_1x_copper_chiseled_waxed"
+    }
+  }
+}

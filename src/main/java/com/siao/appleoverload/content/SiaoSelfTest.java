@@ -15,7 +15,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.neoforged.neoforge.common.DataMapHooks;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 
@@ -167,6 +169,30 @@ public final class SiaoSelfTest {
 
         machineCases(server);
         phase6Cases(server, registries);
+        copperCases();
+    }
+
+    /** 阶段 5（第一刀）：铜专线整块变种 + 氧化/涂蜡 data map。 */
+    private static void copperCases() {
+        Block plainCut = SiaoBlocks.copperVariant(CopperVariant.Stage.UNAFFECTED, CopperVariant.Shape.CUT, false).get();
+        Block exposedCut = SiaoBlocks.copperVariant(CopperVariant.Stage.EXPOSED, CopperVariant.Shape.CUT, false).get();
+        Block waxedCut = SiaoBlocks.copperVariant(CopperVariant.Stage.UNAFFECTED, CopperVariant.Shape.CUT, true).get();
+        Block base = SiaoBlocks.copperVariant(CopperVariant.Stage.UNAFFECTED, CopperVariant.Shape.BASE, false).get();
+        Block exposedBase = SiaoBlocks.copperVariant(CopperVariant.Stage.EXPOSED, CopperVariant.Shape.BASE, false).get();
+
+        check("铜：注册了 39 个整块变种", SiaoBlocks.copperVariantCount() == 39,
+                SiaoBlocks.copperVariantCount() + " 个");
+        check("铜：未氧化基础格复用一重压缩铜块",
+                base == SiaoBlocks.unitBlock(Material.COPPER, 1).get(), String.valueOf(base));
+        check("铜：oxidizables 表生效（基础 -> 斑驳）",
+                DataMapHooks.getNextOxidizedStage(base) == exposedBase,
+                String.valueOf(DataMapHooks.getNextOxidizedStage(base)));
+        check("铜：oxidizables 表生效（切制 -> 斑驳切制）",
+                DataMapHooks.getNextOxidizedStage(plainCut) == exposedCut,
+                String.valueOf(DataMapHooks.getNextOxidizedStage(plainCut)));
+        check("铜：waxables 表生效（切制 -> 涂蜡切制）",
+                DataMapHooks.getBlockWaxed(plainCut) == waxedCut,
+                String.valueOf(DataMapHooks.getBlockWaxed(plainCut)));
     }
 
     /** 阶段 6：奇点 / 混沌苹果 / 终极木棍。 */

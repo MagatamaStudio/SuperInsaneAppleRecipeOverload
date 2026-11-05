@@ -25,6 +25,7 @@ public final class SiaoBlocks {
 
     private static final Map<String, DeferredBlock<Block>> UNIT_BLOCKS = new LinkedHashMap<>();
     private static final Map<String, DeferredBlock<Block>> RAW_BLOCKS = new LinkedHashMap<>();
+    private static final Map<String, DeferredBlock<Block>> COPPER_VARIANTS = new LinkedHashMap<>();
     private static final Map<MachineKind, DeferredBlock<Block>> MACHINES = new EnumMap<>(MachineKind.class);
 
     static {
@@ -54,6 +55,24 @@ public final class SiaoBlocks {
             MACHINES.put(kind, block);
             SiaoItems.registerBlockItem(id, block);
         }
+
+        // 铜专线：4 氧化阶 × 5 整块形状 × 2 涂蜡 = 40，其中 1 格被阶段 1 的压缩块占用
+        for (CopperVariant.Stage stage : CopperVariant.Stage.values()) {
+            for (CopperVariant.Shape shape : CopperVariant.Shape.values()) {
+                for (boolean waxed : new boolean[]{false, true}) {
+                    if (CopperVariant.isOccupiedByCompressionBlock(stage, shape, waxed)) {
+                        continue;
+                    }
+                    String id = CopperVariant.id(stage, shape, waxed);
+                    DeferredBlock<Block> block = BLOCKS.registerSimpleBlock(id, BlockBehaviour.Properties.of()
+                            .strength(3.0F, 6.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.COPPER));
+                    COPPER_VARIANTS.put(id, block);
+                    SiaoItems.registerBlockItem(id, block);
+                }
+            }
+        }
     }
 
     private SiaoBlocks() {
@@ -82,11 +101,27 @@ public final class SiaoBlocks {
         return MACHINES.get(kind);
     }
 
+    public static DeferredBlock<Block> copperVariant(CopperVariant.Stage stage, CopperVariant.Shape shape,
+                                                     boolean waxed) {
+        if (CopperVariant.isOccupiedByCompressionBlock(stage, shape, waxed)) {
+            return unitBlock(Material.COPPER, 1);
+        }
+        return COPPER_VARIANTS.get(CopperVariant.id(stage, shape, waxed));
+    }
+
+    public static Collection<DeferredBlock<Block>> copperVariants() {
+        return COPPER_VARIANTS.values();
+    }
+
+    public static int copperVariantCount() {
+        return COPPER_VARIANTS.size();
+    }
+
     public static Collection<DeferredBlock<Block>> machineBlocks() {
         return MACHINES.values();
     }
 
     public static int blockCount() {
-        return UNIT_BLOCKS.size() + RAW_BLOCKS.size() + MACHINES.size();
+        return UNIT_BLOCKS.size() + RAW_BLOCKS.size() + MACHINES.size() + COPPER_VARIANTS.size();
     }
 }

@@ -245,6 +245,21 @@ MACHINES = [
     ("centrifuge", "苹果离心机", "Apple Centrifuge", (72, 158, 128), (130, 236, 180)),
 ]
 
+# 铜专线：4 氧化阶 × 5 整块形状 × 2 涂蜡
+COPPER_STAGES = [
+    ("", "", "", (196, 124, 88)),
+    ("exposed_", "斑驳", "Exposed", (168, 138, 112)),
+    ("weathered_", "锈蚀", "Weathered", (108, 152, 130)),
+    ("oxidized_", "氧化", "Oxidized", (82, 162, 148)),
+]
+COPPER_SHAPES = [
+    ("", "", ""),
+    ("cut", "切制", "Cut"),
+    ("polished", "磨制", "Polished"),
+    ("grate", "格栅", "Grate"),
+    ("chiseled", "雕纹", "Chiseled"),
+]
+
 UPGRADES = [
     ("speed", "速度升级", "Speed Upgrade", (90, 200, 255), False),
     ("energy", "能量升级", "Energy Upgrade", (255, 200, 70), False),
@@ -391,6 +406,55 @@ def slot_boxes() -> list[tuple[int, int]]:
     for column in range(9):
         boxes.append((LAYOUT["player_x"] + column * LAYOUT["slot"], LAYOUT["hotbar_y"]))
     return boxes
+
+
+def make_copper_texture(color: tuple[int, int, int], shape: str, waxed: bool) -> Image.Image:
+    """铜变种方块贴图：基础色 + 形状纹样；涂蜡额外加高光斜纹。"""
+    size = BLOCK_SIZE
+    r, g, b = color
+    if waxed:
+        r = min(255, int(r * 1.10) + 18)
+        g = min(255, int(g * 1.10) + 18)
+        b = min(255, int(b * 1.10) + 18)
+
+    img = Image.new("RGBA", (size, size), (r, g, b, 255))
+    draw = ImageDraw.Draw(img)
+    margin = max(2, size // 16)
+    dark = (int(r * 0.55), int(g * 0.55), int(b * 0.55), 255)
+    line = max(1, size // 32)
+
+    draw.rectangle([0, 0, size - 1, size - 1], outline=dark, width=line)
+
+    if shape == "cut":
+        mid = size // 2
+        edge = (int(r * 0.70), int(g * 0.70), int(b * 0.70), 255)
+        draw.line([(mid, 0), (mid, size - 1)], fill=edge, width=line)
+        draw.line([(0, mid), (size - 1, mid)], fill=edge, width=line)
+    elif shape == "polished":
+        lighter = (min(255, r + 18), min(255, g + 18), min(255, b + 18), 255)
+        draw.rectangle([margin, margin, size - margin - 1, size - margin - 1], fill=lighter)
+        draw.line([(margin, margin), (size - margin - 1, margin)], fill=(255, 255, 255, 90), width=1)
+    elif shape == "grate":
+        step = size // 4
+        hole = (int(r * 0.45), int(g * 0.45), int(b * 0.45), 255)
+        for col in range(1, 4):
+            for row in range(1, 4):
+                x0 = col * step - step // 3
+                y0 = row * step - step // 3
+                draw.rectangle([x0, y0, x0 + step // 2, y0 + step // 2], fill=hole)
+    elif shape == "chiseled":
+        lighter = (min(255, r + 22), min(255, g + 22), min(255, b + 22), 255)
+        draw.polygon([(size // 2, margin), (size - margin, size // 2),
+                      (size // 2, size - margin), (margin, size // 2)], fill=lighter)
+        draw.line([(size // 2, margin), (size // 2, size - margin)],
+                  fill=(int(r * 0.6), int(g * 0.6), int(b * 0.6), 255), width=1)
+
+    if waxed:
+        step = max(4, size // 8)
+        for offset in range(0, size, step):
+            draw.line([(0, offset), (offset, 0)], fill=(255, 255, 255, 26), width=1)
+
+    return img
 
 
 def make_gui_texture() -> Image.Image:
@@ -592,6 +656,71 @@ def main() -> None:
         zh_lang[f"item.{MOD_ID}.{item_id}"] = zh
         en_lang[f"item.{MOD_ID}.{item_id}"] = en
         counts["item"] += 1
+
+    # ---- 铜专线：4 氧化阶 × 5 整块形状 × 2 涂蜡 ------------------------------
+    # (stage_prefix, shape_suffix, waxed) -> block_id；未氧化+基础+未涂蜡这一格
+    # 已经被阶段 1 的压缩块占用了，直接复用那个 ID
+    copper_ids: dict[tuple[str, str, bool], str] = {}
+    copper_jobs = []
+    for stage_prefix, _, _, color in COPPER_STAGES:
+        for shape_suffix, _, _ in COPPER_SHAPES:
+            for waxed in (False, True):
+                if stage_prefix == "" and shape_suffix == "" and not waxed:
+                    copper_ids[(stage_prefix, shape_suffix, False)] = unit_block_id("copper", 1)
+                    continue
+                copper_jobs.append((stage_prefix, shape_suffix, waxed, color))
+
+    for stage_prefix, shape_suffix, waxed, color in copper_jobs:
+        block_id = f"{stage_prefix}compressed_1x_copper"
+        if shape_suffix:
+            block_id += f"_{shape_suffix}"
+        if waxed:
+            block_id += "_waxed"
+        copper_ids[(stage_prefix, shape_suffix, waxed)] = block_id
+
+        make_copper_texture(color, shape_suffix, waxed).save(tex_block / f"{block_id}.png")
+        write_json(models_block / f"{block_id}.json", {
+            "parent": "block/cube_all",
+            "textures": {"all": f"{MOD_ID}:block/{block_id}"},
+        })
+        write_json(blockstates / f"{block_id}.json", {
+            "variants": {"": {"model": f"{MOD_ID}:block/{block_id}"}},
+        })
+        write_json(models_item / f"{block_id}.json", {"parent": f"{MOD_ID}:block/{block_id}"})
+
+        stage_zh = next(zh for pfx, zh, _, _ in COPPER_STAGES if pfx == stage_prefix)
+        stage_en = next(en for pfx, _, en, _ in COPPER_STAGES if pfx == stage_prefix)
+        shape_zh = next(zh for sfx, zh, _ in COPPER_SHAPES if sfx == shape_suffix)
+        shape_en = next(en for sfx, _, en in COPPER_SHAPES if sfx == shape_suffix)
+        zh_lang[f"block.{MOD_ID}.{block_id}"] = (
+            ("涂蜡" if waxed else "") + stage_zh + shape_zh + "一重压缩铜锭块")
+        en_lang[f"block.{MOD_ID}.{block_id}"] = (
+            ("Waxed " if waxed else "")
+            + (stage_en + " " if stage_en else "")
+            + (shape_en + " " if shape_en else "")
+            + "1x Compressed Copper Ingot Block")
+        block_ids.append(block_id)
+        counts["block"] += 1
+
+    # ---- data map：氧化 / 涂蜡（命名空间必须是 neoforge）--------------------
+    data_maps = ROOT / "src" / "main" / "resources" / "data" / "neoforge" / "data_maps" / "block"
+    data_maps.mkdir(parents=True, exist_ok=True)
+
+    oxidizables: dict[str, dict] = {}
+    waxables: dict[str, dict] = {}
+    stage_prefixes = [pfx for pfx, _, _, _ in COPPER_STAGES]
+    for index, stage_prefix in enumerate(stage_prefixes):
+        for shape_suffix, _, _ in COPPER_SHAPES:
+            current = copper_ids[(stage_prefix, shape_suffix, False)]
+            if index + 1 < len(stage_prefixes):
+                nxt = copper_ids[(stage_prefixes[index + 1], shape_suffix, False)]
+                oxidizables[f"{MOD_ID}:{current}"] = {"next_oxidation_stage": f"{MOD_ID}:{nxt}"}
+            waxed_id = copper_ids.get((stage_prefix, shape_suffix, True))
+            if waxed_id:
+                waxables[f"{MOD_ID}:{current}"] = {"waxed": f"{MOD_ID}:{waxed_id}"}
+
+    write_json(data_maps / "oxidizables.json", {"values": oxidizables})
+    write_json(data_maps / "waxables.json", {"values": waxables})
 
     # ---- 机器 GUI 底图 ------------------------------------------------------
     make_gui_texture().save(gui_dir / "apple_machine.png")
