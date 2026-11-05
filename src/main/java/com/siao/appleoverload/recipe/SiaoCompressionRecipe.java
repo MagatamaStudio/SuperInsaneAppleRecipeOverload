@@ -3,9 +3,13 @@ package com.siao.appleoverload.recipe;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.siao.appleoverload.config.SiaoConfig;
+import com.siao.appleoverload.content.CompressionInfo;
+import com.siao.appleoverload.content.Material;
 import com.siao.appleoverload.content.SiaoComponents;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.StringRepresentable;
@@ -82,6 +86,9 @@ public record SiaoCompressionRecipe(
 
     @Override
     public boolean matches(CraftingInput input, Level level) {
+        if (exceedsTierCap()) {
+            return false;
+        }
         int found = 0;
         Boolean uniformEnchant = null;
 
@@ -116,6 +123,22 @@ public record SiaoCompressionRecipe(
         }
 
         return found == count;
+    }
+
+    /**
+     * 重数上限（配置项 {@code maxTier}）。
+     *
+     * <p>低于 9 时，超过上限的压缩配方**在配方层就不匹配** ——
+     * 所以手搓和机器会同时失效，不会出现「机器不认但工作台能压」的裂缝。</p>
+     */
+    private boolean exceedsTierCap() {
+        int cap = SiaoConfig.maxTier();
+        if (cap >= Material.MAX_TIER) {
+            return false;
+        }
+        return CompressionInfo.parse(BuiltInRegistries.ITEM.getKey(result.getItem()))
+                .map(info -> info.tier() > cap)
+                .orElse(false);
     }
 
     @Override

@@ -9,12 +9,14 @@ import com.siao.appleoverload.content.SiaoSelfTest;
 import com.siao.appleoverload.machine.MachineKind;
 import com.siao.appleoverload.machine.SiaoMachineRegistry;
 import com.siao.appleoverload.client.SiaoClientEvents;
+import com.siao.appleoverload.config.SiaoConfig;
 import com.siao.appleoverload.recipe.SiaoRecipes;
 import com.siao.appleoverload.upgrade.SiaoUpgrades;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +46,8 @@ public final class SiaoMod {
         // 升级类型是自建注册表：先建表（NewRegistryEvent），再注册条目
         modBus.addListener(SiaoUpgrades::onNewRegistry);
         SiaoUpgrades.TYPES.register(modBus);
+
+        container.registerConfig(ModConfig.Type.COMMON, SiaoConfig.SPEC);
 
         modBus.addListener(SiaoCommonEvents::registerCapabilities);
 

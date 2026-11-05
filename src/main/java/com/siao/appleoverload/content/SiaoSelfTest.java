@@ -1,6 +1,7 @@
 package com.siao.appleoverload.content;
 
 import com.siao.appleoverload.SiaoMod;
+import com.siao.appleoverload.config.SiaoConfig;
 import com.siao.appleoverload.machine.AppleMachineBlockEntity;
 import com.siao.appleoverload.machine.MachineKind;
 import com.siao.appleoverload.recipe.CompressionIndex;
@@ -170,6 +171,34 @@ public final class SiaoSelfTest {
         machineCases(server);
         phase6Cases(server, registries);
         copperCases();
+        configCases(server);
+    }
+
+    /** 阶段 7：配置项。 */
+    private static void configCases(MinecraftServer server) {
+        SiaoCompressionRecipe eightToNine = require(server, "siao:compress_iron_9x");
+        ItemStack eight = new ItemStack(SiaoItems.unit(Material.IRON, 8).get());
+        check("配置：默认 maxTier=9，八重可压到九重",
+                eightToNine.matches(grid(fill(eight, 9)), null), "不匹配");
+
+        int original = SiaoConfig.maxTier();
+        try {
+            SiaoConfig.MAX_TIER.set(3);
+            check("配置：maxTier 已改为 3", SiaoConfig.maxTier() == 3, SiaoConfig.maxTier() + "");
+
+            SiaoCompressionRecipe threeToFour = require(server, "siao:compress_iron_4x");
+            ItemStack three = new ItemStack(SiaoItems.unit(Material.IRON, 3).get());
+            check("配置：maxTier=3 时四重配方不匹配（目标超限）",
+                    !threeToFour.matches(grid(fill(three, 9)), null), "仍然匹配");
+
+            SiaoCompressionRecipe twoToThree = require(server, "siao:compress_iron_3x");
+            ItemStack two = new ItemStack(SiaoItems.unit(Material.IRON, 2).get());
+            check("配置：maxTier=3 时三重配方仍匹配",
+                    twoToThree.matches(grid(fill(two, 9)), null), "不匹配");
+        } finally {
+            SiaoConfig.MAX_TIER.set(original);
+        }
+        check("配置：maxTier 已恢复默认", SiaoConfig.maxTier() == original, SiaoConfig.maxTier() + "");
     }
 
     /** 阶段 5（第一刀）：铜专线整块变种 + 氧化/涂蜡 data map。 */

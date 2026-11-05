@@ -379,7 +379,9 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
 
     public int energyPerOperation() {
         int percent = energyPercent(statLevel(MachineStat.ENERGY));
-        return Math.max(1, machineKind.energyPerOperation() * percent / 100);
+        double scaled = machineKind.energyPerOperation() * percent / 100.0D
+                * SiaoConfig.machineEnergyScale();
+        return Math.max(1, (int) Math.round(scaled));
     }
 
     /** 每级能耗 ×0.8，最低 5%。 */
