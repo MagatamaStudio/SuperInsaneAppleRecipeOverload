@@ -75,3 +75,9 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 21
 }
+
+// 生产 jar 排掉自检类：它只在 -Dsiao.selftest=true 时用，几十 KB 和一堆断言字符串
+// 不该发给玩家。开发环境的 runServer 直接从源码跑，CI 的自检不受影响。
+tasks.named('jar') {
+    exclude 'com/siao/appleoverload/content/SiaoSelfTest*.class'
+}

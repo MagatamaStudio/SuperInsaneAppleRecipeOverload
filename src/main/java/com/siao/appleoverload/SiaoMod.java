@@ -6,7 +6,6 @@ import com.siao.appleoverload.content.SiaoComponents;
 import com.siao.appleoverload.content.SiaoCommands;
 import com.siao.appleoverload.content.SiaoCreativeTabs;
 import com.siao.appleoverload.content.SiaoItems;
-import com.siao.appleoverload.content.SiaoSelfTest;
 import com.siao.appleoverload.machine.MachineKind;
 import com.siao.appleoverload.machine.SiaoMachineRegistry;
 import com.siao.appleoverload.client.SiaoClientEvents;
@@ -62,7 +61,16 @@ public final class SiaoMod {
 
         CompressionTooltips.register();
         SiaoCommands.register();
-        SiaoSelfTest.register();
+        // 用反射触发自检：生产 jar 里会把 SiaoSelfTest 整个排掉（见 build.gradle 的 jar 配置），
+        // 直接静态引用会导致 NoClassDefFoundError
+        try {
+            Class.forName("com.siao.appleoverload.content.SiaoSelfTest")
+                    .getMethod("register").invoke(null);
+        } catch (ClassNotFoundException notInProductionJar) {
+            LOGGER.debug("自检类未打包，跳过");
+        } catch (ReflectiveOperationException reflectiveFailure) {
+            LOGGER.warn("自检注册失败", reflectiveFailure);
+        }
 
         LOGGER.info("SIAO 已装填：{} 压缩单位 / {} 粗形态 / {} 方块 / {} 数据组件 / {} 配方类型 / {} 机器",
                 SiaoItems.unitCount(), SiaoItems.rawUnitCount(), SiaoBlocks.blockCount(),
