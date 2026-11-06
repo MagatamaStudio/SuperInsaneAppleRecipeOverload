@@ -94,9 +94,25 @@ public record SiaoCompressionRecipe(
         return group;
     }
 
+    /**
+     * 两条奇点路线按配置互斥。
+     *
+     * <p>{@code direct} 时只认九重压缩苹果锭那条；{@code shard} 时只认碎片那条。
+     * 两条配方都留在数据里，靠这里门控 —— 切换路线只改一行配置，不用重新生成资源。</p>
+     */
+    private boolean singularityRouteAllowed() {
+        return switch (group) {
+            case "singularity" -> com.siao.appleoverload.config.SiaoConfig.singularityMode()
+                    == com.siao.appleoverload.config.SiaoConfig.SingularityMode.DIRECT;
+            case "singularity_shards" -> com.siao.appleoverload.config.SiaoConfig.singularityMode()
+                    == com.siao.appleoverload.config.SiaoConfig.SingularityMode.SHARD;
+            default -> true;
+        };
+    }
+
     @Override
     public boolean matches(CraftingInput input, Level level) {
-        if (exceedsTierCap()) {
+        if (!singularityRouteAllowed() || exceedsTierCap()) {
             return false;
         }
         int found = 0;

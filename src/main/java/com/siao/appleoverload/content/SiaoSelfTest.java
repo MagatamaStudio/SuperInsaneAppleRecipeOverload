@@ -194,7 +194,7 @@ public final class SiaoSelfTest {
         long loaded = server.getRecipeManager().getRecipes().stream()
                 .filter(holder -> holder.value() instanceof SiaoCompressionRecipe)
                 .count();
-        check("自定义压缩配方装载数 = 758", loaded == 758L, loaded + " 条");
+        check("自定义压缩配方装载数 = 759", loaded == 759L, loaded + " 条");
 
         machineCases(server);
         sideConfigCases(server);
@@ -207,6 +207,7 @@ public final class SiaoSelfTest {
         recipeSyncCases(server);
         advancementCases(server);
         perTierCases(server);
+        singularityRouteCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
@@ -233,6 +234,10 @@ public final class SiaoSelfTest {
             }
             Recipe<?> recipe = holder.value();
 
+            if (recipe instanceof SiaoCompressionRecipe compression
+                    && compression.group().startsWith("singularity")) {
+                continue;   // 这两条按配置互斥，在 singularityRouteCases 里单独测
+            }
             if (recipe instanceof SiaoCompressionRecipe compression) {
                 compressionTotal++;
                 CraftingInput input = compressionInput(compression);
@@ -345,6 +350,34 @@ public final class SiaoSelfTest {
                                      net.minecraft.world.item.crafting.Recipe<?> recipe) {
         ((net.minecraft.world.item.crafting.RecipeSerializer) recipe.getSerializer())
                 .streamCodec().encode(buffer, recipe);
+    }
+    /** 奇点两条路线按配置互斥。 */
+    private static void singularityRouteCases(MinecraftServer server) {
+        SiaoCompressionRecipe direct = require(server, "siao:craft_singularity");
+        SiaoCompressionRecipe shards = require(server, "siao:craft_singularity_from_shards");
+        ItemStack tier9 = new ItemStack(SiaoItems.unit(Material.APPLE, 9).get());
+
+        List<ItemStack> grid = new ArrayList<>(9);
+        for (int i = 0; i < 9; i++) {
+            grid.add(new ItemStack(SiaoItems.singularityShard().get()));
+        }
+        CraftingInput shardInput = CraftingInput.of(3, 3, grid);
+
+        try {
+            SiaoConfig.SINGULARITY_MODE.set(SiaoConfig.SingularityMode.DIRECT);
+            check("奇点：direct 模式下九重苹果锭可合",
+                    direct.matches(single(tier9), null), "不匹配");
+            check("奇点：direct 模式下碎片配方不生效",
+                    !shards.matches(shardInput, null), "居然生效了");
+
+            SiaoConfig.SINGULARITY_MODE.set(SiaoConfig.SingularityMode.SHARD);
+            check("奇点：shard 模式下 9 碎片可合",
+                    shards.matches(shardInput, null), "不匹配");
+            check("奇点：shard 模式下九重苹果锭配方不生效",
+                    !direct.matches(single(tier9), null), "居然生效了");
+        } finally {
+            SiaoConfig.SINGULARITY_MODE.set(SiaoConfig.SingularityMode.DIRECT);
+        }
     }
     /** 进度与物品标签。 */
     private static void advancementCases(MinecraftServer server) {
@@ -798,8 +831,8 @@ public final class SiaoSelfTest {
 
         // 399 = 15 个原版输入 + 1 个粗苹果金 + 5 个合金基础物品 + 189 个压缩单位 + 189 个压缩块
         // （压缩/拆分/装块/拆块四类配方现在都在同一张索引里）
-        check("压缩索引覆盖 399 种输入",
-                CompressionIndex.size(server.getRecipeManager()) == 399,
+        check("压缩索引覆盖 400 种输入",
+                CompressionIndex.size(server.getRecipeManager()) == 400,
                 CompressionIndex.size(server.getRecipeManager()) + " 种");
 
         // ★ L12 科技树绑定：压缩链（单位 ↔ 单位、单位 ↔ 块）的东西不能在工作台合成。

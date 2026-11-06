@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "singularity_shards",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:singularity_shard"
+  },
+  "result": {
+    "id": "siao:singularity",
+    "count": 1
+  },
+  "count": 9,
+  "enchant": "reject"
+}

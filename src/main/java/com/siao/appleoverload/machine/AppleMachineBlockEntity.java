@@ -573,6 +573,21 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
             return true;
         }
 
+        // shard 路线：附魔的高重压缩单位会被拆成奇点碎片
+        if (input.getItem() instanceof SiaoCompressedItem && SiaoComponents.isEnchanted(input)
+                && SiaoConfig.singularityMode() == SiaoConfig.SingularityMode.SHARD) {
+            var info = com.siao.appleoverload.content.CompressionInfo
+                    .parse(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(input.getItem()));
+            if (info.isPresent() && info.get().kind() != com.siao.appleoverload.content.CompressionInfo.Kind.BLOCK
+                    && info.get().tier() >= SiaoConfig.SHARD_MIN_TIER) {
+                if (!insertOutput(new ItemStack(SiaoItems.singularityShard().get(), 1))) {
+                    return false;
+                }
+                input.shrink(1);
+                return true;
+            }
+        }
+
         if (input.getItem() instanceof SiaoCompressedItem && SiaoComponents.isEnchanted(input)) {
             ItemStack purified = input.copyWithCount(1);
             SiaoComponents.clearEnchantment(purified);

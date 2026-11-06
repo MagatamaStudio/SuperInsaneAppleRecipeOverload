@@ -25,6 +25,18 @@ public final class SiaoConfig {
             .comment("机器每次加工耗能的倍率。1.0 = 原始数值，0.5 = 省一半，2.0 = 翻倍。")
             .defineInRange("machineEnergyScale", 1.0D, 0.0D, 100.0D);
 
+    /**
+     * 奇点获取路线。
+     *
+     * <p>{@code direct}：1 个九重压缩苹果锭（387,420,489 个苹果）直接合奇点。</p>
+     * <p>{@code shard}：离心机把**附魔六重及以上**的压缩单位拆成奇点碎片，
+     * 9 个碎片合 1 个奇点。代价约 9 × 9^6 = 4,782,969 个苹果，
+     * 比 direct（9^9 = 387,420,489）便宜约 81 倍 —— 这是我自己定的数值，见自决清单 §13.8。</p>
+     */
+    public static final ModConfigSpec.EnumValue<SingularityMode> SINGULARITY_MODE = BUILDER
+            .comment("奇点获取路线：direct = 九重压缩苹果锭直接合；shard = 离心机拆碎片，30 碎片合一个。")
+            .defineEnum("singularityMode", SingularityMode.DIRECT);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private static final int DEFAULT_MAX_TIER = 9;
@@ -41,6 +53,25 @@ public final class SiaoConfig {
             return DEFAULT_MAX_TIER;
         }
     }
+
+    public static SingularityMode singularityMode() {
+        try {
+            return SINGULARITY_MODE.get();
+        } catch (IllegalStateException notLoadedYet) {
+            return SingularityMode.DIRECT;
+        }
+    }
+
+    /** 奇点路线。 */
+    public enum SingularityMode {
+        DIRECT, SHARD
+    }
+
+    /** 合 1 个奇点需要多少碎片（shard 路线）。受合成格 9 格限制，不能超过 9。 */
+    public static final int SINGULARITY_SHARDS = 9;
+
+    /** 离心机能拆碎片的最低重数。 */
+    public static final int SHARD_MIN_TIER = 6;
 
     public static double machineEnergyScale() {
         try {

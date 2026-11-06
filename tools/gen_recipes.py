@@ -241,6 +241,10 @@ def main() -> None:
     # 产物带随机组件，所以是"特殊配方"（无 ingredient 声明，匹配逻辑在 Java 里）
     emit("chaos_apple", {"type": f"{MOD_ID}:chaos_apple"})
 
+    # shard 路线：30 个奇点碎片 -> 1 个奇点（direct/shard 由配置门控，两条配方都留着）
+    emit("craft_singularity_from_shards", compression(
+        f"{MOD_ID}:singularity_shard", f"{MOD_ID}:singularity", 1, 9, "singularity_shards", "reject"))
+
     # ---- 铜：楼梯 / 台阶（各 8 个：4 氧化阶 × 涂蜡）-------------------------
     def copper_base_id(stage: str, waxed: bool) -> str:
         if stage == "" and not waxed:
