@@ -363,8 +363,9 @@ public final class SiaoSelfTest {
 
         check("侧配置：新机器六面默认双向",
                 machine.sideMode(face) == SideMode.BOTH, machine.sideMode(face).name());
-        check("侧配置：双向面能看到全部槽位",
-                machine.getItemHandlerFor(face).getSlots() == machine.machineKind().totalSlots(),
+        check("侧配置：双向面能看到输入+输出槽（不含升级槽）",
+                machine.getItemHandlerFor(face).getSlots()
+                        == machine.machineKind().inputSlots() + machine.machineKind().outputSlots(),
                 machine.getItemHandlerFor(face).getSlots() + " 槽");
 
         machine.setSideMode(face, SideMode.OUTPUT);
@@ -376,7 +377,8 @@ public final class SiaoSelfTest {
                 !outputOnly.insertItem(0, new ItemStack(Items.IRON_INGOT), true).isEmpty(),
                 "居然插进去了");
         check("侧配置：没改过的面不受影响",
-                machine.getItemHandlerFor(Direction.DOWN).getSlots() == machine.machineKind().totalSlots(),
+                machine.getItemHandlerFor(Direction.DOWN).getSlots()
+                        == machine.machineKind().inputSlots() + machine.machineKind().outputSlots(),
                 machine.getItemHandlerFor(Direction.DOWN).getSlots() + " 槽");
 
         machine.setSideMode(face, SideMode.INPUT);
@@ -391,6 +393,26 @@ public final class SiaoSelfTest {
         check("侧配置：内部逻辑看不到侧配置（不会被自己卡死）",
                 machine.getItemHandler().getSlots() == machine.machineKind().totalSlots(),
                 machine.getItemHandler().getSlots() + " 槽");
+
+        // 外部视图绝不能暴露升级槽，否则管道能把升级抽走
+        check("侧配置：外部视图不含升级槽",
+                machine.getItemHandlerFor(null).getSlots()
+                        == machine.machineKind().inputSlots() + machine.machineKind().outputSlots(),
+                machine.getItemHandlerFor(null).getSlots() + " 槽");
+        check("侧配置：内部栏仍含 8 个升级槽",
+                machine.getItemHandler().getSlots() == machine.machineKind().totalSlots(),
+                machine.getItemHandler().getSlots() + " 槽");
+
+        // 带 requiresCorrectToolForDrops 的方块必须在 mineable 标签里，否则挖了不掉
+        check("机器在 #mineable/pickaxe 里",
+                server.overworld().getBlockState(machine.getBlockPos())
+                        .is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE),
+                machine.getBlockState().getBlock().toString());
+        var copperStairs = SiaoBlocks.copperVariant(CopperVariant.Stage.UNAFFECTED,
+                CopperVariant.Shape.STAIRS, false).get().defaultBlockState();
+        check("铜楼梯在 #mineable/pickaxe 里",
+                copperStairs.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE),
+                copperStairs.getBlock().toString());
     }
 
     /** 阶段 7：配置项。 */

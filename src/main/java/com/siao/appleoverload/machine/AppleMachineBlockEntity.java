@@ -127,23 +127,24 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
     }
 
     /**
-     * 某个面能看到的物品栏视图。
+     * 外部（管道 / 漏斗 / AE2）能看到的物品栏视图。
      *
-     * <p>{@code side == null}（内部/无面）返回完整栏位，机器自己的加工逻辑走这里，
-     * 所以侧配置怎么调都不会把机器自己卡死。</p>
+     * <p>⚠️ **永远不暴露升级槽**。之前 side==null 和「双向」两种情况下直接返回了
+     * 内部物品栏，而内部栏里含 8 个升级槽 —— 管道能把速度升级抽走。现在统一
+     * 只给「输入槽 + 输出槽」这一段（这两段在内部栏里是连续的）。</p>
+     *
+     * <p>机器自己的加工逻辑走 {@link #getItemHandler()}，完全不受侧配置影响。</p>
      */
     public IItemHandler getItemHandlerFor(@Nullable Direction side) {
-        if (side == null) {
-            return inventory;
-        }
-        SideMode mode = sides[side.ordinal()];
+        SideMode mode = side == null ? SideMode.BOTH : sides[side.ordinal()];
         if (mode == SideMode.NONE) {
             return MachineSideHandler.empty();
         }
         boolean input = mode.allowsInsert();
         boolean output = mode.allowsExtract();
         if (input && output) {
-            return inventory;
+            return new MachineSideHandler(inventory, machineKind.inputStart(),
+                    machineKind.inputSlots() + machineKind.outputSlots(), true, true);
         }
         if (input) {
             return new MachineSideHandler(inventory, machineKind.inputStart(),

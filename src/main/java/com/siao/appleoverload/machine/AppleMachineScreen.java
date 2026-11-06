@@ -38,7 +38,8 @@ public class AppleMachineScreen extends AbstractContainerScreen<AppleMachineMenu
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        // 不要在这里再调 renderBackground：AbstractContainerScreen.render 内部已经调过，
+        // 手动再来一次会把背景和模糊画两遍
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
     }

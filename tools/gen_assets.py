@@ -871,6 +871,15 @@ def main() -> None:
     write_json(data_maps / "oxidizables.json", {"values": oxidizables})
     write_json(data_maps / "waxables.json", {"values": waxables})
 
+    # ---- 方块标签：可被镐加速/可掉落 ----------------------------------------
+    # ⚠️ 带 requiresCorrectToolForDrops 的方块如果不在 #minecraft:mineable/pickaxe 里，
+    # 任何工具都算不上「正确工具」，结果是挖了什么都不掉。
+    tags_dir = ROOT / "src" / "main" / "resources" / "data" / "minecraft" / "tags" / "block" / "mineable"
+    tags_dir.mkdir(parents=True, exist_ok=True)
+    pickaxe_blocks = sorted({f"{MOD_ID}:{bid}" for bid in block_ids}
+                            | {f"{MOD_ID}:{bid}" for bid, _ in special_loot})
+    write_json(tags_dir / "pickaxe.json", {"replace": False, "values": pickaxe_blocks})
+
     # ---- 机器 GUI 底图 ------------------------------------------------------
     make_gui_texture().save(gui_dir / "apple_machine.png")
 

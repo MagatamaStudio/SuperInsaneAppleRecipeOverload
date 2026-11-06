@@ -21,9 +21,9 @@ public final class SiaoCreativeTabs {
                     .displayItems((parameters, output) -> {
                         SiaoItems.units().forEach(item -> output.accept(item.get()));
                         SiaoItems.rawUnits().forEach(item -> output.accept(item.get()));
+                        // blockItems() 已经包含压缩块、铜变种、机器的 BlockItem，
+                        // 这里再单独遍历一遍就会出现两份
                         SiaoItems.blockItems().forEach(item -> output.accept(item.get()));
-                        SiaoBlocks.copperVariants().forEach(block -> output.accept(block.get().asItem()));
-                        SiaoBlocks.machineBlocks().forEach(block -> output.accept(block.get()));
                         SiaoItems.upgrades().forEach(item -> output.accept(item.get()));
                         output.accept(SiaoItems.configurator().get());
                         output.accept(SiaoItems.singularityShard().get());
