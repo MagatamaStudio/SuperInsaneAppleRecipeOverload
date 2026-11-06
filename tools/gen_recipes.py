@@ -90,7 +90,11 @@ def compression(ingredient: str, result: str, result_count: int, count: int,
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--clean", action="store_true")
+    parser.add_argument("--per-tier", type=int, default=9, help="每重需要几个（默认 9，可改 3/4/6 给服务器主降档）")
     args = parser.parse_args()
+    per_tier = args.per_tier
+    if per_tier < 2:
+        raise SystemExit("--per-tier 至少为 2")
 
     if args.clean and OUT.exists():
         shutil.rmtree(OUT)
@@ -118,16 +122,16 @@ def main() -> None:
                 cur = item(material, tier, raw)
                 # 压缩：9 个上一级 -> 1 个本级（附魔跟着走）
                 emit(f"{tag}compress_{material}_{tier}x",
-                     compression(prev, cur, 1, 9, group, "preserve"))
+                     compression(prev, cur, 1, per_tier, group, "preserve"))
                 # 拆分：1 个本级 -> 9 个上一级（附魔物品拒绝匹配，防止越拆越多）
                 emit(f"{tag}decompress_{material}_{tier}x",
-                     compression(cur, prev, 9, 1, group, "preserve"))
+                     compression(cur, prev, per_tier, 1, group, "preserve"))
                 # 装块 / 拆块（方块不参与附魔，同样拒绝）
                 blk = block(material, tier, raw)
                 emit(f"{tag}pack_{material}_{tier}x_block",
-                     compression(cur, blk, 1, 9, group, "preserve"))
+                     compression(cur, blk, 1, per_tier, group, "preserve"))
                 emit(f"{tag}unpack_{material}_{tier}x_block",
-                     compression(blk, cur, 9, 1, group, "preserve"))
+                     compression(blk, cur, per_tier, 1, group, "preserve"))
 
     # ---- 机器与升级（产物固定，用普通 shaped；只有压缩链需要自定义类型）----
     def shaped(recipe_id: str, pattern: list[str], keys: dict[str, str], result: str,

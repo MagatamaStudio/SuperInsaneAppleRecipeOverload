@@ -206,6 +206,7 @@ public final class SiaoSelfTest {
         oxidationCases(server);
         recipeSyncCases(server);
         advancementCases(server);
+        perTierCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
@@ -361,6 +362,35 @@ public final class SiaoSelfTest {
                 net.minecraft.resources.ResourceLocation.parse("siao:compressed_units")));
         check("标签：压缩单位标签非空", units.isPresent() && units.get().size() > 100,
                 units.map(tag -> tag.size() + " 项").orElse("标签不存在"));
+    }
+    /**
+     * 回归：配方里的每重倍数必须等于 {@link Material#PER_TIER}。
+     *
+     * <p>倍数同时写在 Java 常量和生成的 JSON 里，改了一边忘了另一边就会出现
+     * 「配方要 9 个、代码按 3 个算等价数」的错位。这条断言把它钉死。</p>
+     */
+    private static void perTierCases(MinecraftServer server) {
+        int mismatched = 0;
+        String first = null;
+        for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
+            if (!(holder.value() instanceof SiaoCompressionRecipe recipe)) {
+                continue;
+            }
+            boolean compressPair = recipe.ingredient().getItems().length > 0
+                    && (recipe.count() == Material.PER_TIER || recipe.result().getCount() == Material.PER_TIER);
+            if (!compressPair) {
+                continue;
+            }
+            boolean ok = recipe.count() == Material.PER_TIER
+                    || recipe.result().getCount() == Material.PER_TIER;
+            if (!ok) {
+                mismatched++;
+                if (first == null) {
+                    first = holder.id().toString();
+                }
+            }
+        }
+        check("配方倍数与 Material.PER_TIER 一致", mismatched == 0, first);
     }
     /** C 线：氧化链必须真的挂上（之前那 55 个铜变种根本没实现 WeatheringCopper）。 */
     private static void oxidationCases(MinecraftServer server) {
