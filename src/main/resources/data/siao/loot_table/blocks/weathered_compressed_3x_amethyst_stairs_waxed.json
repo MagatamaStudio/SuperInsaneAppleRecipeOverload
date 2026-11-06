@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "siao:weathered_compressed_3x_amethyst_stairs_waxed"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "siao:blocks/weathered_compressed_3x_amethyst_stairs_waxed"
+}

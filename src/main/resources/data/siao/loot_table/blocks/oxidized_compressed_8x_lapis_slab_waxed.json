@@ -1,0 +1,35 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "add": false,
+              "conditions": [
+                {
+                  "block": "siao:oxidized_compressed_8x_lapis_slab_waxed",
+                  "condition": "minecraft:block_state_property",
+                  "properties": {
+                    "type": "double"
+                  }
+                }
+              ],
+              "count": 2.0,
+              "function": "minecraft:set_count"
+            },
+            {
+              "function": "minecraft:explosion_decay"
+            }
+          ],
+          "name": "siao:oxidized_compressed_8x_lapis_slab_waxed"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "siao:blocks/oxidized_compressed_8x_lapis_slab_waxed"
+}

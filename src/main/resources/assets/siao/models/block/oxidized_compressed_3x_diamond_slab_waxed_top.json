@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "siao:block/oxidized_compressed_3x_diamond_slab_waxed",
+    "top": "siao:block/oxidized_compressed_3x_diamond_slab_waxed",
+    "side": "siao:block/oxidized_compressed_3x_diamond_slab_waxed"
+  }
+}

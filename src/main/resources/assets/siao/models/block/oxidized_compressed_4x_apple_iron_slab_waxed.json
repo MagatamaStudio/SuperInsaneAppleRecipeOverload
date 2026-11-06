@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "siao:block/oxidized_compressed_4x_apple_iron_slab_waxed",
+    "top": "siao:block/oxidized_compressed_4x_apple_iron_slab_waxed",
+    "side": "siao:block/oxidized_compressed_4x_apple_iron_slab_waxed"
+  }
+}

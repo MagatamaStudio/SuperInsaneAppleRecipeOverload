@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "siao:block/weathered_compressed_4x_apple_netherite_slab_waxed",
+    "top": "siao:block/weathered_compressed_4x_apple_netherite_slab_waxed",
+    "side": "siao:block/weathered_compressed_4x_apple_netherite_slab_waxed"
+  }
+}

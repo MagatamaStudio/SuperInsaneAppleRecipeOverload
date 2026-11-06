@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/oxidized_compressed_4x_gold_slab_waxed"
+    },
+    "type=double": {
+      "model": "siao:block/oxidized_compressed_4x_gold_slab_waxed"
+    },
+    "type=top": {
+      "model": "siao:block/oxidized_compressed_4x_gold_slab_waxed_top"
+    }
+  }
+}

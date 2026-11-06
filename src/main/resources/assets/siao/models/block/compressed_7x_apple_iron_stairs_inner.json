@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "siao:block/compressed_7x_apple_iron_stairs",
+    "top": "siao:block/compressed_7x_apple_iron_stairs",
+    "side": "siao:block/compressed_7x_apple_iron_stairs"
+  }
+}

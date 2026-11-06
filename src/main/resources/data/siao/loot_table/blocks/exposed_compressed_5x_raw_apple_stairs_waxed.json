@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "siao:exposed_compressed_5x_raw_apple_stairs_waxed"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "siao:blocks/exposed_compressed_5x_raw_apple_stairs_waxed"
+}

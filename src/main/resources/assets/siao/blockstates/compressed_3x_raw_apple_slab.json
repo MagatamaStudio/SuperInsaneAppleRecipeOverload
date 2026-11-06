@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/compressed_3x_raw_apple_slab"
+    },
+    "type=double": {
+      "model": "siao:block/compressed_3x_raw_apple_slab"
+    },
+    "type=top": {
+      "model": "siao:block/compressed_3x_raw_apple_slab_top"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/stairs",
+  "textures": {
+    "bottom": "siao:block/compressed_4x_redstone_stairs_waxed",
+    "top": "siao:block/compressed_4x_redstone_stairs_waxed",
+    "side": "siao:block/compressed_4x_redstone_stairs_waxed"
+  }
+}

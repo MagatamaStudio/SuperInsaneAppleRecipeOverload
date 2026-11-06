@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "siao:block/weathered_compressed_7x_amethyst_slab",
+    "top": "siao:block/weathered_compressed_7x_amethyst_slab",
+    "side": "siao:block/weathered_compressed_7x_amethyst_slab"
+  }
+}

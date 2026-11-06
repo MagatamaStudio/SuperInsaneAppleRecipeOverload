@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "siao:block/weathered_compressed_6x_coal_slab",
+    "top": "siao:block/weathered_compressed_6x_coal_slab",
+    "side": "siao:block/weathered_compressed_6x_coal_slab"
+  }
+}

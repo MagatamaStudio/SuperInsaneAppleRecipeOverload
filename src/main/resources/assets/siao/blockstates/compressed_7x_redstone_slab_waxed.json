@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/compressed_7x_redstone_slab_waxed"
+    },
+    "type=double": {
+      "model": "siao:block/compressed_7x_redstone_slab_waxed"
+    },
+    "type=top": {
+      "model": "siao:block/compressed_7x_redstone_slab_waxed_top"
+    }
+  }
+}

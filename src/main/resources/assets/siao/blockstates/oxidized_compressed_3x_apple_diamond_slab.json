@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/oxidized_compressed_3x_apple_diamond_slab"
+    },
+    "type=double": {
+      "model": "siao:block/oxidized_compressed_3x_apple_diamond_slab"
+    },
+    "type=top": {
+      "model": "siao:block/oxidized_compressed_3x_apple_diamond_slab_top"
+    }
+  }
+}

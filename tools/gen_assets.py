@@ -774,6 +774,39 @@ def main() -> None:
                            f"{ZH_TIERS[tier]}重压缩{raw_zh}块", f"{num_prefix(tier)}Compressed {raw_en} Block")
                 counts["block"] += 1
 
+    # ---- 通用形状发射器（楼梯/台阶在外面也要用）------------------------------
+    special_loot: list[tuple[str, str]] = []
+
+    def emit_shape_variant(block_id: str, color, waxed: bool, zh: str, en: str, shape: str) -> None:
+        """按形状写 blockstate / 模型 / 掉落表条目 / 语言。"""
+        make_copper_texture(color, "" if shape in ("stairs", "slab") else shape, waxed).save(
+            tex_block / f"{block_id}.png")
+        model_ns = f"{MOD_ID}:block/{block_id}"
+        texture_ns = f"{MOD_ID}:block/{block_id}"
+        if shape == "stairs":
+            for suffix, parent in (("", "minecraft:block/stairs"),
+                                   ("_inner", "minecraft:block/inner_stairs"),
+                                   ("_outer", "minecraft:block/outer_stairs")):
+                write_json(models_block / f"{block_id}{suffix}.json", {
+                    "parent": parent,
+                    "textures": {"bottom": texture_ns, "top": texture_ns, "side": texture_ns},
+                })
+            write_json(blockstates / f"{block_id}.json", stairs_blockstate(model_ns))
+            special_loot.append((block_id, "stairs"))
+        else:
+            for suffix, parent in (("", "minecraft:block/slab"),
+                                   ("_top", "minecraft:block/slab_top")):
+                write_json(models_block / f"{block_id}{suffix}.json", {
+                    "parent": parent,
+                    "textures": {"bottom": texture_ns, "top": texture_ns, "side": texture_ns},
+                })
+            write_json(blockstates / f"{block_id}.json", slab_blockstate(model_ns))
+            special_loot.append((block_id, "slab"))
+        write_json(models_item / f"{block_id}.json", {"parent": model_ns})
+        zh_lang[f"block.{MOD_ID}.{block_id}"] = zh
+        en_lang[f"block.{MOD_ID}.{block_id}"] = en
+        counts["block"] += 1
+
     # ---- C 线：所有压缩方块的氧化变种 --------------------------------------
     OX_STAGES = [(1, "exposed_", "斑驳", "Exposed", (150, 178, 152)),
                  (2, "weathered_", "锈蚀", "Weathered", (110, 160, 140)),
@@ -805,6 +838,14 @@ def main() -> None:
                         emit_block(f"{shape_stem}_waxed", average_color(load_base(block_base or item_base, 64)),
                                    tier, "涂蜡" + zh_shape + zh_stem, "Waxed " + en_shape + " " + en_stem)
                         ox_blocks += 2
+                    # 楼梯 / 台阶（base 色）
+                    base_color0 = average_color(load_base(block_base or item_base, 64))
+                    for shape, zh_shape, en_shape in (("stairs", "楼梯", "Stairs"), ("slab", "台阶", "Slab")):
+                        sid_shape = f"compressed_{tier}x_" + (f"raw_{mat_id}" if raw else mat_id) + f"_{shape}"
+                        emit_shape_variant(sid_shape, base_color0, False,
+                                           zh_shape + zh_stem, en_shape + " " + en_stem, shape)
+                        emit_shape_variant(f"{sid_shape}_waxed", base_color0, True,
+                                           "涂蜡" + zh_shape + zh_stem, "Waxed " + en_shape + " " + en_stem, shape)
                 prev = base_id
                 for stage, prefix, zh_s, en_s, color in OX_STAGES:
                     sid = f"{prefix}{base_id}"
@@ -830,6 +871,14 @@ def main() -> None:
                                        "涂蜡" + zh_shape + zh_s + zh_stem,
                                        "Waxed " + en_shape + " " + en_s + " " + en_stem)
                             ox_blocks += 2
+                        # 楼梯 / 台阶（跟随氧化阶）
+                        for shape, zh_shape, en_shape in (("stairs", "楼梯", "Stairs"), ("slab", "台阶", "Slab")):
+                            stain = f"{prefix}compressed_{tier}x_" + (f"raw_{mat_id}" if raw else mat_id) + f"_{shape}"
+                            emit_shape_variant(stain, color, False,
+                                               zh_shape + zh_s + zh_stem, en_shape + " " + en_s + " " + en_stem, shape)
+                            emit_shape_variant(f"{stain}_waxed", color, True,
+                                               "涂蜡" + zh_shape + zh_s + zh_stem,
+                                               "Waxed " + en_shape + " " + en_s + " " + en_stem, shape)
 
     # 合并进 data map（保留铜专线已有的条目）
     for map_path, pairs in (
@@ -904,7 +953,6 @@ def main() -> None:
                     continue
                 copper_jobs.append((stage_prefix, shape_suffix, waxed, color))
 
-    special_loot: list[tuple[str, str]] = []
     for stage_prefix, shape_suffix, waxed, color in copper_jobs:
         block_id = f"{stage_prefix}compressed_1x_copper"
         if shape_suffix:

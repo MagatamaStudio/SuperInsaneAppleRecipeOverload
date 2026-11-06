@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/weathered_compressed_7x_apple_netherite_slab"
+    },
+    "type=double": {
+      "model": "siao:block/weathered_compressed_7x_apple_netherite_slab"
+    },
+    "type=top": {
+      "model": "siao:block/weathered_compressed_7x_apple_netherite_slab_top"
+    }
+  }
+}

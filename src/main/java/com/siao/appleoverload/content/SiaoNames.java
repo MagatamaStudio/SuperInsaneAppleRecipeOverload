@@ -96,6 +96,8 @@ public final class SiaoNames {
 
     /** D 线的四种整块形状（楼梯/台阶单独处理）。 */
     public static final String[] CUBE_SHAPES = {"cut", "polished", "grate", "chiseled"};
+    /** 全部形状：4 个整块 + 楼梯 + 台阶。 */
+    public static final String[] ALL_SHAPES = {"cut", "polished", "grate", "chiseled", "stairs", "slab"};
 
     public static String zhShapeBlock(Material material, int tier, boolean raw, int stage,
                                       String shape, boolean waxed) {

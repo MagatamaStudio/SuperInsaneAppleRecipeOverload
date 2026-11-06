@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "siao:block/exposed_compressed_8x_iron_slab_waxed",
+    "top": "siao:block/exposed_compressed_8x_iron_slab_waxed",
+    "side": "siao:block/exposed_compressed_8x_iron_slab_waxed"
+  }
+}

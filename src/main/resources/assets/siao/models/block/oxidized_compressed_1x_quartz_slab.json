@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "siao:block/oxidized_compressed_1x_quartz_slab",
+    "top": "siao:block/oxidized_compressed_1x_quartz_slab",
+    "side": "siao:block/oxidized_compressed_1x_quartz_slab"
+  }
+}

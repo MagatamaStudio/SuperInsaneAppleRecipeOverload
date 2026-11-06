@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "siao:block/exposed_compressed_7x_redstone_slab_waxed",
+    "top": "siao:block/exposed_compressed_7x_redstone_slab_waxed",
+    "side": "siao:block/exposed_compressed_7x_redstone_slab_waxed"
+  }
+}

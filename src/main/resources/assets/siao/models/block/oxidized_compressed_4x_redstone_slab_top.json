@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "siao:block/oxidized_compressed_4x_redstone_slab",
+    "top": "siao:block/oxidized_compressed_4x_redstone_slab",
+    "side": "siao:block/oxidized_compressed_4x_redstone_slab"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/compressed_2x_raw_gold_slab"
+    },
+    "type=double": {
+      "model": "siao:block/compressed_2x_raw_gold_slab"
+    },
+    "type=top": {
+      "model": "siao:block/compressed_2x_raw_gold_slab_top"
+    }
+  }
+}

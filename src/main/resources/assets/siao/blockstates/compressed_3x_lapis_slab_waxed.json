@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/compressed_3x_lapis_slab_waxed"
+    },
+    "type=double": {
+      "model": "siao:block/compressed_3x_lapis_slab_waxed"
+    },
+    "type=top": {
+      "model": "siao:block/compressed_3x_lapis_slab_waxed_top"
+    }
+  }
+}

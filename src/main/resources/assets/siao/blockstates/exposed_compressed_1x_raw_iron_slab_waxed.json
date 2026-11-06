@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/exposed_compressed_1x_raw_iron_slab_waxed"
+    },
+    "type=double": {
+      "model": "siao:block/exposed_compressed_1x_raw_iron_slab_waxed"
+    },
+    "type=top": {
+      "model": "siao:block/exposed_compressed_1x_raw_iron_slab_waxed_top"
+    }
+  }
+}

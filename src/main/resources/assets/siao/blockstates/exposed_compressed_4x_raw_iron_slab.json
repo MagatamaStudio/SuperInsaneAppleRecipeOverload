@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/exposed_compressed_4x_raw_iron_slab"
+    },
+    "type=double": {
+      "model": "siao:block/exposed_compressed_4x_raw_iron_slab"
+    },
+    "type=top": {
+      "model": "siao:block/exposed_compressed_4x_raw_iron_slab_top"
+    }
+  }
+}

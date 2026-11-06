@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "siao:compressed_9x_quartz_stairs_waxed"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "siao:blocks/compressed_9x_quartz_stairs_waxed"
+}

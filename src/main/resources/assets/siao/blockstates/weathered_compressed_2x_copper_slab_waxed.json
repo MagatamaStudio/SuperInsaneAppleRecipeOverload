@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/weathered_compressed_2x_copper_slab_waxed"
+    },
+    "type=double": {
+      "model": "siao:block/weathered_compressed_2x_copper_slab_waxed"
+    },
+    "type=top": {
+      "model": "siao:block/weathered_compressed_2x_copper_slab_waxed_top"
+    }
+  }
+}

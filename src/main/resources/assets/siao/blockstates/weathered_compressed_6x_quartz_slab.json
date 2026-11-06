@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/weathered_compressed_6x_quartz_slab"
+    },
+    "type=double": {
+      "model": "siao:block/weathered_compressed_6x_quartz_slab"
+    },
+    "type=top": {
+      "model": "siao:block/weathered_compressed_6x_quartz_slab_top"
+    }
+  }
+}

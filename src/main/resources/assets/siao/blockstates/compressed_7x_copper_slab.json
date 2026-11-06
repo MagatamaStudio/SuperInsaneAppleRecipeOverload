@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "siao:block/compressed_7x_copper_slab"
+    },
+    "type=double": {
+      "model": "siao:block/compressed_7x_copper_slab"
+    },
+    "type=top": {
+      "model": "siao:block/compressed_7x_copper_slab_top"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/stairs",
+  "textures": {
+    "bottom": "siao:block/weathered_compressed_4x_iron_stairs_waxed",
+    "top": "siao:block/weathered_compressed_4x_iron_stairs_waxed",
+    "side": "siao:block/weathered_compressed_4x_iron_stairs_waxed"
+  }
+}

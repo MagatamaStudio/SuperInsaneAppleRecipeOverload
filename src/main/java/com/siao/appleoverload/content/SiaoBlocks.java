@@ -137,10 +137,10 @@ public final class SiaoBlocks {
                 if (material == Material.COPPER && tier == 1) {
                     continue;
                 }
-                for (String shape : SiaoNames.CUBE_SHAPES) {
-                    // 形状变种是装饰线，不参与氧化，所以统一用普通方块
+                for (String shape : SiaoNames.ALL_SHAPES) {
+                    // 形状变种是装饰线，不参与氧化
                     String shapeId = SiaoNames.shapeBlockId(material, tier, raw, stage, shape, waxed);
-                    DeferredBlock<Block> shapeBlock = BLOCKS.registerSimpleBlock(shapeId, properties);
+                    DeferredBlock<Block> shapeBlock = registerShapeBlock(shapeId, shape, properties);
                     OXIDIZED_BLOCKS.put(shapeId, shapeBlock);
                     SiaoItems.registerBlockItem(shapeId, shapeBlock);
                 }
@@ -150,17 +150,27 @@ public final class SiaoBlocks {
         // stage 0 的未涂蜡形状：上面那个循环在 (stage==0, waxed=false) 时直接跳过了
         // 基础方块本身，但它的形状变种是独立 id，必须补注册
         if (!(material == Material.COPPER && tier == 1)) {
-            for (String shape : SiaoNames.CUBE_SHAPES) {
+            for (String shape : SiaoNames.ALL_SHAPES) {
                 String shapeId = SiaoNames.shapeBlockId(material, tier, raw, 0, shape, false);
                 BlockBehaviour.Properties props = BlockBehaviour.Properties.of()
                         .strength(2.0F, 6.0F)
                         .requiresCorrectToolForDrops()
                         .sound(SoundType.COPPER);
-                DeferredBlock<Block> shapeBlock = BLOCKS.registerSimpleBlock(shapeId, props);
+                DeferredBlock<Block> shapeBlock = registerShapeBlock(shapeId, shape, props);
                 OXIDIZED_BLOCKS.put(shapeId, shapeBlock);
                 SiaoItems.registerBlockItem(shapeId, shapeBlock);
             }
         }
+    }
+    /** 按形状注册：楼梯 / 台阶 / 整块。 */
+    private static DeferredBlock<Block> registerShapeBlock(String id, String shape,
+                                                           BlockBehaviour.Properties properties) {
+        return switch (shape) {
+            case "stairs" -> BLOCKS.register(id, () -> new SiaoStairBlock(
+                    Blocks.CUT_COPPER.defaultBlockState(), properties));
+            case "slab" -> BLOCKS.register(id, () -> new SlabBlock(properties));
+            default -> BLOCKS.registerSimpleBlock(id, properties);
+        };
     }
     private static DeferredBlock<Block> register(String id, Material material) {
         SoundType sound = material.form() == Material.Form.INGOT ? SoundType.METAL : SoundType.STONE;

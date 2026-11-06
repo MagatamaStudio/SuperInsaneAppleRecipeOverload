@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "siao:block/compressed_9x_lapis_slab",
+    "top": "siao:block/compressed_9x_lapis_slab",
+    "side": "siao:block/compressed_9x_lapis_slab"
+  }
+}
