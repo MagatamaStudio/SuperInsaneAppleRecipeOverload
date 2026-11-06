@@ -87,6 +87,53 @@ public final class SiaoNames {
         };
         return waxed ? "Waxed " + staged : staged;
     }
+    /** D 线：形状变种 id = 氧化变种 id 把结尾的 {@code _block} 换成 {@code _shape}。 */
+    public static String shapeBlockId(Material material, int tier, boolean raw, int stage,
+                                      String shape, boolean waxed) {
+        String base = stagePrefix(stage) + (raw ? rawUnitId(material, tier) : unitId(material, tier));
+        return base + "_" + shape + (waxed ? "_waxed" : "");
+    }
+
+    /** D 线的四种整块形状（楼梯/台阶单独处理）。 */
+    public static final String[] CUBE_SHAPES = {"cut", "polished", "grate", "chiseled"};
+
+    public static String zhShapeBlock(Material material, int tier, boolean raw, int stage,
+                                      String shape, boolean waxed) {
+        String stem = raw ? zhRawBlock(material, tier) : zhUnitBlock(material, tier);
+        String staged = switch (stage) {
+            case 1 -> "斑驳" + stem;
+            case 2 -> "锈蚀" + stem;
+            case 3 -> "氧化" + stem;
+            default -> stem;
+        };
+        String shaped = switch (shape) {
+            case "cut" -> "切制" + staged;
+            case "polished" -> "磨制" + staged;
+            case "grate" -> "格栅" + staged;
+            case "chiseled" -> "雕纹" + staged;
+            default -> staged;
+        };
+        return waxed ? "涂蜡" + shaped : shaped;
+    }
+
+    public static String enShapeBlock(Material material, int tier, boolean raw, int stage,
+                                      String shape, boolean waxed) {
+        String stem = raw ? enRawBlock(material, tier) : enUnitBlock(material, tier);
+        String staged = switch (stage) {
+            case 1 -> "Exposed " + stem;
+            case 2 -> "Weathered " + stem;
+            case 3 -> "Oxidized " + stem;
+            default -> stem;
+        };
+        String shaped = switch (shape) {
+            case "cut" -> "Cut " + staged;
+            case "polished" -> "Polished " + staged;
+            case "grate" -> "Grate " + staged;
+            case "chiseled" -> "Chiseled " + staged;
+            default -> staged;
+        };
+        return waxed ? "Waxed " + shaped : shaped;
+    }
     // ---- 中文名 ---------------------------------------------------------------
 
     public static String zhUnit(Material material, int tier) {

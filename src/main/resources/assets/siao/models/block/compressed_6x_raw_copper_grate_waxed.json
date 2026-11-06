@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "siao:block/compressed_6x_raw_copper_grate_waxed"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "siao:block/exposed_compressed_9x_iron_polished_waxed"
+  }
+}

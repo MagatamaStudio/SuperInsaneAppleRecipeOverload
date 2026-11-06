@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "siao:block/weathered_compressed_7x_raw_iron_cut"
+  }
+}

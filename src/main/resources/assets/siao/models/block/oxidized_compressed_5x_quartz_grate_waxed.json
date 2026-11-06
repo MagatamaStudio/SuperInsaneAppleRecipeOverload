@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "siao:block/oxidized_compressed_5x_quartz_grate_waxed"
+  }
+}

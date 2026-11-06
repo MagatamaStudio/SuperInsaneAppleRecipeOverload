@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "siao:block/compressed_5x_raw_apple_grate_waxed"
+  }
+}

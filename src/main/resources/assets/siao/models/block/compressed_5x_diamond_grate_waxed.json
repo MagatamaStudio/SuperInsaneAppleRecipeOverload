@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "siao:block/compressed_5x_diamond_grate_waxed"
+  }
+}

@@ -793,6 +793,18 @@ def main() -> None:
                            tier, "涂蜡" + zh_stem, "Waxed " + en_stem)
                 ox_blocks += 1
                 wax_map[f"{MOD_ID}:{base_id}"] = f"{MOD_ID}:{base_id}_waxed"
+                # 未氧化态的形状变种（Java 侧 stage 0 也会注册）
+                if not (mat_id == "copper" and tier == 1):
+                    for shape, zh_shape, en_shape in (
+                            ("cut", "切制", "Cut"), ("polished", "磨制", "Polished"),
+                            ("grate", "格栅", "Grate"), ("chiseled", "雕纹", "Chiseled")):
+                        shape_stem = f"compressed_{tier}x_" + \
+                                     (f"raw_{mat_id}" if raw else mat_id) + f"_{shape}"
+                        emit_block(shape_stem, average_color(load_base(block_base or item_base, 64)),
+                                   tier, zh_shape + zh_stem, en_shape + " " + en_stem)
+                        emit_block(f"{shape_stem}_waxed", average_color(load_base(block_base or item_base, 64)),
+                                   tier, "涂蜡" + zh_shape + zh_stem, "Waxed " + en_shape + " " + en_stem)
+                        ox_blocks += 2
                 prev = base_id
                 for stage, prefix, zh_s, en_s, color in OX_STAGES:
                     sid = f"{prefix}{base_id}"
@@ -803,6 +815,21 @@ def main() -> None:
                     ox_next[f"{MOD_ID}:{prev}"] = f"{MOD_ID}:{sid}"
                     wax_map[f"{MOD_ID}:{sid}"] = f"{MOD_ID}:{sid}_waxed"
                     prev = sid
+
+                    # D 线：四种整块形状（铜的第 1 重已经有 CopperVariant 线，跳过）
+                    # 形状是装饰线，不进氧化链 —— 所以只是普通方块
+                    if not (mat_id == "copper" and tier == 1):
+                        for shape, zh_shape, en_shape in (
+                                ("cut", "切制", "Cut"), ("polished", "磨制", "Polished"),
+                                ("grate", "格栅", "Grate"), ("chiseled", "雕纹", "Chiseled")):
+                            shape_stem = f"{prefix}compressed_{tier}x_" + \
+                                         (f"raw_{mat_id}" if raw else mat_id) + f"_{shape}"
+                            emit_block(shape_stem, color, tier,
+                                       zh_shape + zh_s + zh_stem, en_shape + " " + en_s + " " + en_stem)
+                            emit_block(f"{shape_stem}_waxed", color, tier,
+                                       "涂蜡" + zh_shape + zh_s + zh_stem,
+                                       "Waxed " + en_shape + " " + en_s + " " + en_stem)
+                            ox_blocks += 2
 
     # 合并进 data map（保留铜专线已有的条目）
     for map_path, pairs in (
@@ -989,6 +1016,14 @@ def main() -> None:
     for block_id, kind in special_loot:
         payload = stairs_loot(block_id) if kind == "stairs" else slab_loot(block_id)
         write_json(loot_dir / f"{block_id}.json", payload)
+
+    # ---- 方块标签：从实际生成的 blockstate 反推，保证一个不漏 ------------------
+    # C/D 线现在有一万多个方块，靠手工收集 block_ids 一定会漏
+    tags_dir2 = ROOT / "src" / "main" / "resources" / "data" / "minecraft" / "tags" / "block" / "mineable"
+    tags_dir2.mkdir(parents=True, exist_ok=True)
+    all_block_ids = sorted(p.stem for p in (ROOT / "src/main/resources/assets/siao/blockstates").glob("*.json"))
+    write_json(tags_dir2 / "pickaxe.json",
+               {"replace": False, "values": [f"{MOD_ID}:{bid}" for bid in all_block_ids]})
 
     write_json(lang_dir / "zh_cn.json", dict(sorted(zh_lang.items())))
     write_json(lang_dir / "en_us.json", dict(sorted(en_lang.items())))

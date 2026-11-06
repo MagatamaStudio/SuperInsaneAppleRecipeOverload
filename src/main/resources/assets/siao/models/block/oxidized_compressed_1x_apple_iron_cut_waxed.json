@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "siao:block/oxidized_compressed_1x_apple_iron_cut_waxed"
+  }
+}

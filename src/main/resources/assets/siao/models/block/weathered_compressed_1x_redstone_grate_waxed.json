@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "siao:block/weathered_compressed_1x_redstone_grate_waxed"
+  }
+}

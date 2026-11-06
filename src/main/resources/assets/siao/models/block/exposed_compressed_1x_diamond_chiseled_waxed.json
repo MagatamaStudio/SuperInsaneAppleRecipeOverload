@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "siao:block/exposed_compressed_1x_diamond_chiseled_waxed"
+  }
+}

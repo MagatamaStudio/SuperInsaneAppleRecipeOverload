@@ -131,6 +131,34 @@ public final class SiaoBlocks {
                 }
                 OXIDIZED_BLOCKS.put(id, block);
                 SiaoItems.registerBlockItem(id, block);
+
+                // ---- D 线：四种整块形状跟着每个氧化态一起生成 ----------
+                // 铜的第 1 重已经有专门的 CopperVariant 线，跳过避免 ID 撞车
+                if (material == Material.COPPER && tier == 1) {
+                    continue;
+                }
+                for (String shape : SiaoNames.CUBE_SHAPES) {
+                    // 形状变种是装饰线，不参与氧化，所以统一用普通方块
+                    String shapeId = SiaoNames.shapeBlockId(material, tier, raw, stage, shape, waxed);
+                    DeferredBlock<Block> shapeBlock = BLOCKS.registerSimpleBlock(shapeId, properties);
+                    OXIDIZED_BLOCKS.put(shapeId, shapeBlock);
+                    SiaoItems.registerBlockItem(shapeId, shapeBlock);
+                }
+            }
+        }
+
+        // stage 0 的未涂蜡形状：上面那个循环在 (stage==0, waxed=false) 时直接跳过了
+        // 基础方块本身，但它的形状变种是独立 id，必须补注册
+        if (!(material == Material.COPPER && tier == 1)) {
+            for (String shape : SiaoNames.CUBE_SHAPES) {
+                String shapeId = SiaoNames.shapeBlockId(material, tier, raw, 0, shape, false);
+                BlockBehaviour.Properties props = BlockBehaviour.Properties.of()
+                        .strength(2.0F, 6.0F)
+                        .requiresCorrectToolForDrops()
+                        .sound(SoundType.COPPER);
+                DeferredBlock<Block> shapeBlock = BLOCKS.registerSimpleBlock(shapeId, props);
+                OXIDIZED_BLOCKS.put(shapeId, shapeBlock);
+                SiaoItems.registerBlockItem(shapeId, shapeBlock);
             }
         }
     }
