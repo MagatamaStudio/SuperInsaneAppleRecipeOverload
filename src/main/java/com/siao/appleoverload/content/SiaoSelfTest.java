@@ -175,12 +175,52 @@ public final class SiaoSelfTest {
 
         machineCases(server);
         sideConfigCases(server);
+        persistenceCases(server, registries);
         batchCases(server);
         orchardCases(server);
+        generatorCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
         configCases(server);
+    }
+
+    /** 苹果发电机：烧苹果换 FE，整个模组唯一的电源。 */
+    private static void generatorCases(MinecraftServer server) {
+        int fuelTier1 = AppleMachineBlockEntity.fuelValue(
+                new ItemStack(SiaoItems.unit(Material.APPLE, 1).get()));
+        check("发电机：一重压缩苹果 = 1800 FE", fuelTier1 == 1800, fuelTier1 + " FE");
+        check("发电机：铁锭不能当燃料",
+                AppleMachineBlockEntity.fuelValue(new ItemStack(Items.IRON_INGOT)) == 0, "");
+
+        AppleMachineBlockEntity generator = place(server, MachineKind.GENERATOR, new BlockPos(18, 210, 0));
+        generator.getItemHandler().insertItem(0, new ItemStack(Items.APPLE, 4), false);
+        int before = generator.energyStored();
+        for (int tick = 0; tick < 60; tick++) {
+            generator.tick();
+        }
+        check("发电机：烧苹果产电",
+                generator.energyStored() > before, before + " -> " + generator.energyStored());
+        check("发电机：燃料被消耗",
+                generator.getItemHandler().getStackInSlot(0).getCount() == 3,
+                generator.getItemHandler().getStackInSlot(0).getCount() + " 个");
+    }
+
+    /** 存档往返：能量与侧配置必须能存进去再读回来（也是 /data merge 能不能改能量的前提）。 */
+    private static void persistenceCases(MinecraftServer server, HolderLookup.Provider registries) {
+        AppleMachineBlockEntity machine = place(server, MachineKind.COMPRESSOR, new BlockPos(16, 210, 0));
+        machine.fillEnergy();
+        int full = machine.energyStored();
+        machine.setSideMode(Direction.UP, SideMode.NONE);
+
+        net.minecraft.nbt.CompoundTag tag = machine.saveWithoutMetadata(registries);
+        machine.loadWithComponents(tag, registries);
+
+        check("存档往返：NBT 里有 energy 键", tag.contains("energy"), tag.getAllKeys().toString());
+        check("存档往返：能量读回来一致", machine.energyStored() == full,
+                machine.energyStored() + " / " + full);
+        check("存档往返：侧配置读回来一致", machine.sideMode(Direction.UP) == SideMode.NONE,
+                machine.sideMode(Direction.UP).name());
     }
 
     /** 整批推料：AE2 档位 1 的地基，不装 AE2 也能测。 */

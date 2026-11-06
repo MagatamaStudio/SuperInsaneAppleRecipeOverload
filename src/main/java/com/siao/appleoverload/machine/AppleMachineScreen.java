@@ -25,6 +25,7 @@ public class AppleMachineScreen extends AbstractContainerScreen<AppleMachineMenu
     private static final int BAR_TRACK = 0xFF2A2A2A;
 
     private Button sideButton;
+    private SideMode lastShownMode;
 
     public AppleMachineScreen(AppleMachineMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -65,6 +66,11 @@ public class AppleMachineScreen extends AbstractContainerScreen<AppleMachineMenu
             return;
         }
         SideMode mode = menu.sideMode(minecraft.player);
+        if (mode != lastShownMode) {
+            lastShownMode = mode;
+            SiaoMod.LOGGER.info("[SIAO-DEBUG] client side -> {} (face={})",
+                    mode.name(), menu.facingSide(minecraft.player));
+        }
         String zh = mode.zh();
         sideButton.setMessage(Component.literal(zh.substring(0, 1)));
     }
@@ -85,15 +91,18 @@ public class AppleMachineScreen extends AbstractContainerScreen<AppleMachineMenu
         graphics.fill(barX, barY, barX + barWidth, barY + barHeight, BAR_TRACK);
 
         int capacity = Math.max(1, menu.energyCapacity());
-        int filled = Math.max(0, Math.min(barHeight, menu.energyStored() * barHeight / capacity));
+        // 用 long 算：能量 × 条高 在 energy 超过约 4200 万时会 int 溢出成负数，
+        // 结果就是「明明有电，条却是空的」
+        int filled = (int) Math.max(0L, Math.min((long) barHeight,
+                (long) menu.energyStored() * barHeight / capacity));
         if (filled > 0) {
             graphics.fill(barX, barY + barHeight - filled, barX + barWidth, barY + barHeight, ENERGY_COLOR);
         }
 
         // 进度条（从左到右）
         int maxProgress = Math.max(1, menu.maxProgress());
-        int progressWidth = Math.min(MachineLayout.ARROW_WIDTH,
-                menu.progress() * MachineLayout.ARROW_WIDTH / maxProgress);
+        int progressWidth = (int) Math.max(0L, Math.min((long) MachineLayout.ARROW_WIDTH,
+                (long) menu.progress() * MachineLayout.ARROW_WIDTH / maxProgress));
         int progressX = x + MachineLayout.ARROW_X;
         int progressY = y + MachineLayout.ARROW_Y;
         graphics.fill(progressX, progressY, progressX + MachineLayout.ARROW_WIDTH,

@@ -9,7 +9,9 @@ public enum MachineKind implements StringRepresentable {
     ENCHANTER("enchanter", 9, 3, 60, 500),
     CENTRIFUGE("centrifuge", 9, 3, 80, 800),
     /** 苹果农场：吃树苗产苹果，是整个压缩链真正的瓶颈。 */
-    ORCHARD("orchard", 9, 3, 60, 300);
+    ORCHARD("orchard", 9, 3, 60, 300),
+    /** 苹果发电机：烧苹果换 FE。注意它是**产**电，单次耗能是 0。 */
+    GENERATOR("generator", 9, 3, 40, 0);
 
     /** 基础层升级槽数量。 */
     public static final int UPGRADE_SLOTS = 8;
@@ -73,11 +75,11 @@ public enum MachineKind implements StringRepresentable {
         return inputSlots + outputSlots + UPGRADE_SLOTS;
     }
 
-    /** 该机器是否把这个输入槽当料用（压缩机用满 9 格，其余三台只用第 0 格）。 */
+    /** 该机器是否把这个输入槽当料用（压缩机用满 9 格，其余只用第 0 格）。 */
     public boolean usesInputSlot(int slot) {
         return switch (this) {
             case COMPRESSOR -> true;
-            case ENCHANTER, CENTRIFUGE, ORCHARD -> slot == 0;
+            case ENCHANTER, CENTRIFUGE, ORCHARD, GENERATOR -> slot == 0;
         };
     }
 

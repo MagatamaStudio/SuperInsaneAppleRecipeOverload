@@ -199,6 +199,11 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         return sides[side.ordinal()];
     }
 
+    /** 调试用：六面规则的打包值。 */
+    public int packedSideModes() {
+        return packedSides();
+    }
+
     public void setSideMode(Direction side, SideMode mode) {
         sides[side.ordinal()] = mode;
         setChanged();
@@ -267,6 +272,12 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
 
     public int energyStored() {
         return energy.getEnergyStored();
+    }
+
+    /** 调试命令用：把能量缓冲直接充满。 */
+    public void fillEnergy() {
+        energy.fillToMax();
+        setChanged();
     }
 
     @Override
@@ -359,6 +370,10 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
     }
 
     private boolean tryOperation() {
+        if (machineKind == MachineKind.GENERATOR) {
+            // 发电机是产电的，不做「有没有电」的前置检查
+            return runGenerator();
+        }
         int cost = energyPerOperation();
         if (!energy.hasEnergy(cost)) {
             return false;
@@ -368,6 +383,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
             case ENCHANTER -> runEnchanter();
             case CENTRIFUGE -> runCentrifuge();
             case ORCHARD -> runOrchard();
+            case GENERATOR -> runGenerator();
         };
         if (processed) {
             energy.consume(cost);
@@ -430,6 +446,52 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
      *   <li><b>处理混沌苹果</b>：混沌苹果 → 1 个奇点碎片（奇点碎片只从阶段 6 的产物里来）</li>
      * </ol>
      */
+    /**
+     * 苹果发电机：烧掉一个苹果或压缩苹果，往自己的缓冲里灌 FE。
+     *
+     * <p>单次耗能是 0（{@code MachineKind.GENERATOR} 的 energyPerOperation），
+     * 所以 {@code tryOperation} 里的能量检查天然通过，这里只负责**加**电。</p>
+     */
+    private boolean runGenerator() {
+        ItemStack fuel = inventory.getStackInSlot(0);
+        if (fuel.isEmpty()) {
+            return false;
+        }
+        int fe = fuelValue(fuel);
+        if (fe <= 0) {
+            return false;
+        }
+        if (energy.getEnergyStored() + (long) fe > energy.getMaxEnergyStored()) {
+            return false;
+        }
+        fuel.shrink(1);
+        energy.add(fe);
+        return true;
+    }
+
+    /**
+     * 燃料值：苹果 200 FE，压缩苹果按当量放大，最高一次灌满整个缓冲（20 万）。
+     *
+     * <p>当量在 1000 处截断，所以四重（6561）以上都是一次充满 —— 再往上烧是浪费，
+     * 想省就别烧高级的，这也是个自然的经济选择。</p>
+     */
+    public static int fuelValue(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return 0;
+        }
+        if (stack.is(Items.APPLE)) {
+            return 200;
+        }
+        return com.siao.appleoverload.content.CompressionInfo
+                .parse(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()))
+                .filter(info -> info.material() == Material.APPLE)
+                .map(info -> {
+                    long equivalents = Math.min(info.equivalents(), 1000L);
+                    return (int) Math.min(200L * equivalents, MachineKind.ENERGY_CAPACITY);
+                })
+                .orElse(0);
+    }
+
     /**
      * 苹果农场：一个树苗结 {@value #APPLES_PER_SAPLING} 个苹果。
      *
@@ -589,6 +651,9 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         super.loadAdditional(tag, registries);
         inventory.deserializeNBT(registries, tag.getCompound("inventory"));
         energy.deserializeNBT(registries, tag.get("energy"));
+        // /data merge 之类的外部写入不受缓冲上限约束，读回来时夹一下，
+        // 否则 UI 与逻辑对不上
+        energy.clampToCapacity();
         progress = tag.getInt("progress");
         saplingProgress = tag.getInt("saplingProgress");
         if (tag.contains("sides")) {
@@ -616,6 +681,9 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
             }
             if (machineKind == MachineKind.ORCHARD) {
                 return stack.is(ItemTags.SAPLINGS);
+            }
+            if (machineKind == MachineKind.GENERATOR) {
+                return fuelValue(stack) > 0;
             }
             return true;
         }
@@ -656,6 +724,19 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         private void consume(int amount) {
             this.energy = Math.max(0, this.energy - amount);
             setChanged();
+        }
+
+        private void fillToMax() {
+            this.energy = this.capacity;
+        }
+
+        private void add(int amount) {
+            this.energy = Math.min(this.capacity, this.energy + amount);
+            setChanged();
+        }
+
+        private void clampToCapacity() {
+            this.energy = Math.max(0, Math.min(this.capacity, this.energy));
         }
     }
 }

@@ -3,6 +3,7 @@ package com.siao.appleoverload;
 import com.siao.appleoverload.content.CompressionTooltips;
 import com.siao.appleoverload.content.SiaoBlocks;
 import com.siao.appleoverload.content.SiaoComponents;
+import com.siao.appleoverload.content.SiaoCommands;
 import com.siao.appleoverload.content.SiaoCreativeTabs;
 import com.siao.appleoverload.content.SiaoItems;
 import com.siao.appleoverload.content.SiaoSelfTest;
@@ -58,6 +59,7 @@ public final class SiaoMod {
         }
 
         CompressionTooltips.register();
+        SiaoCommands.register();
         SiaoSelfTest.register();
 
         LOGGER.info("SIAO 已装填：{} 压缩单位 / {} 粗形态 / {} 方块 / {} 数据组件 / {} 配方类型 / {} 机器",

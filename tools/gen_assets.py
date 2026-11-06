@@ -244,6 +244,7 @@ MACHINES = [
     ("enchanter", "苹果附魔台", "Apple Enchanter", (146, 96, 206), (206, 150, 255)),
     ("centrifuge", "苹果离心机", "Apple Centrifuge", (72, 158, 128), (130, 236, 180)),
     ("orchard", "苹果农场", "Apple Orchard", (86, 148, 84), (146, 232, 136)),
+    ("generator", "苹果发电机", "Apple Generator", (188, 92, 70), (255, 176, 96)),
 ]
 
 # 铜专线：4 氧化阶 × 5 整块形状 × 2 涂蜡
