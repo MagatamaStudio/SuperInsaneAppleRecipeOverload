@@ -54,11 +54,22 @@ public final class SiaoNames {
     }
 
     public static String zhRawUnit(Material material, int tier) {
-        return zhTier(tier) + "重压缩粗" + stripSuffix(material.zhUnit());
+        // 粗形态名现在由材料自己给（「粗铁」「粗苹果金」），不再靠「去锭加粗」猜
+        return zhTier(tier) + "重压缩" + material.zhRaw();
     }
 
     public static String zhRawBlock(Material material, int tier) {
         return zhRawUnit(material, tier) + "块";
+    }
+
+    /** 第 0 重的粗形态名（没有「重压缩」前缀），如「粗苹果金」。 */
+    public static String zhRawBase(Material material) {
+        return material.zhRaw();
+    }
+
+    /** 第 0 重的粗形态英文名，如「Raw Apple Gold」。 */
+    public static String enRawBase(Material material) {
+        return material.enRaw();
     }
 
     // ---- 英文名 ---------------------------------------------------------------
@@ -72,7 +83,7 @@ public final class SiaoNames {
     }
 
     public static String enRawUnit(Material material, int tier) {
-        return numPrefix(tier) + "Compressed Raw " + stripSuffix(material.enUnit());
+        return numPrefix(tier) + "Compressed " + material.enRaw();
     }
 
     public static String enRawBlock(Material material, int tier) {

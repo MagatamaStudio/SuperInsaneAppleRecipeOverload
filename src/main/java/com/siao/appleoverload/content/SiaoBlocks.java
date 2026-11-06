@@ -101,6 +101,11 @@ public final class SiaoBlocks {
         return RAW_BLOCKS.values();
     }
 
+    /** 粗形态块（如粗苹果金块），自检和配方要用。 */
+    public static DeferredBlock<Block> rawBlock(Material material, int tier) {
+        return RAW_BLOCKS.get(SiaoNames.rawBlockId(material, tier));
+    }
+
     public static DeferredBlock<Block> unitBlock(Material material, int tier) {
         return UNIT_BLOCKS.get(SiaoNames.unitBlockId(material, tier));
     }

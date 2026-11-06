@@ -44,6 +44,8 @@ RAW_BASE = {
     "iron": "minecraft:raw_iron",
     "gold": "minecraft:raw_gold",
     "copper": "minecraft:raw_copper",
+    # 苹果线的粗形态第 0 重是自制物品（原构想 L4 的「粗苹果金」）
+    "apple": "siao:raw_apple_gold",
 }
 
 
@@ -113,13 +115,13 @@ def main() -> None:
                      compression(prev, cur, 1, 9, group, "preserve"))
                 # 拆分：1 个本级 -> 9 个上一级（附魔物品拒绝匹配，防止越拆越多）
                 emit(f"{tag}decompress_{material}_{tier}x",
-                     compression(cur, prev, 9, 1, group, "reject"))
+                     compression(cur, prev, 9, 1, group, "preserve"))
                 # 装块 / 拆块（方块不参与附魔，同样拒绝）
                 blk = block(material, tier, raw)
                 emit(f"{tag}pack_{material}_{tier}x_block",
-                     compression(cur, blk, 1, 9, group, "reject"))
+                     compression(cur, blk, 1, 9, group, "preserve"))
                 emit(f"{tag}unpack_{material}_{tier}x_block",
-                     compression(blk, cur, 9, 1, group, "reject"))
+                     compression(blk, cur, 9, 1, group, "preserve"))
 
     # ---- 机器与升级（产物固定，用普通 shaped；只有压缩链需要自定义类型）----
     def shaped(recipe_id: str, pattern: list[str], keys: dict[str, str], result: str,
@@ -131,6 +133,28 @@ def main() -> None:
             "key": {symbol: {"item": item_id} for symbol, item_id in keys.items()},
             "result": {"id": result, "count": count},
         })
+
+    # ---- 苹果线的基础物品（L4 粗苹果金 / L6 苹果与其他锭合成）----
+    emit("craft_raw_apple_gold", {
+        "type": "minecraft:crafting_shapeless",
+        "category": "misc",
+        "ingredients": [{"item": "minecraft:apple"}, {"item": "minecraft:raw_gold"}],
+        "result": {"id": f"{MOD_ID}:raw_apple_gold", "count": 1},
+    })
+    emit("craft_apple_ingot", {
+        "type": "minecraft:crafting_shapeless",
+        "category": "misc",
+        "ingredients": [{"item": "minecraft:apple"}, {"item": "minecraft:gold_ingot"}],
+        "result": {"id": "minecraft:apple", "count": 2},
+    })
+    emit("smelt_raw_apple_gold", {
+        "type": "minecraft:smelting",
+        "category": "misc",
+        "ingredient": {"item": f"{MOD_ID}:raw_apple_gold"},
+        "result": {"id": "minecraft:apple", "count": 1},
+        "experience": 0.35,
+        "cookingtime": 200,
+    })
 
     shaped("craft_apple_compressor",
            ["III", "IPI", "III"],
@@ -184,25 +208,13 @@ def main() -> None:
     emit("craft_singularity", compression(
         f"{MOD_ID}:compressed_9x_apple", f"{MOD_ID}:singularity", 1, 1, "singularity", "reject"))
 
-    # 终极木棍：附魔的一重压缩苹果锭 → 1 根木棍。整个模组的笑点兑现点。
+    # 终极木棍：原构想 L13 —— 附魔一重压缩粗苹果金**块** → 1 根木棍。
     emit("ultimate_stick", compression(
-        f"{MOD_ID}:compressed_1x_apple", "minecraft:stick", 1, 1, "ultimate", "require"))
+        f"{MOD_ID}:compressed_1x_raw_apple_block", "minecraft:stick", 1, 1, "ultimate", "require"))
 
-    # 混沌苹果：8 种不同材料的一重压缩单位围一个苹果
-    shaped("craft_chaos_apple",
-           ["IGC", "DAE", "LQZ"],
-           {
-               "I": f"{MOD_ID}:compressed_1x_iron",
-               "G": f"{MOD_ID}:compressed_1x_gold",
-               "C": f"{MOD_ID}:compressed_1x_copper",
-               "D": f"{MOD_ID}:compressed_1x_diamond",
-               "E": f"{MOD_ID}:compressed_1x_emerald",
-               "L": f"{MOD_ID}:compressed_1x_lapis",
-               "Q": f"{MOD_ID}:compressed_1x_quartz",
-               "Z": f"{MOD_ID}:compressed_1x_amethyst",
-               "A": "minecraft:apple",
-           },
-           f"{MOD_ID}:chaos_apple")
+    # 混沌苹果：原构想 L11 —— 附魔一重压缩粗苹果金 + 附魔一重压缩苹果锭。
+    # 产物带随机组件，所以是"特殊配方"（无 ingredient 声明，匹配逻辑在 Java 里）
+    emit("chaos_apple", {"type": f"{MOD_ID}:chaos_apple"})
 
     # ---- 铜：楼梯 / 台阶（各 8 个：4 氧化阶 × 涂蜡）-------------------------
     def copper_base_id(stage: str, waxed: bool) -> str:

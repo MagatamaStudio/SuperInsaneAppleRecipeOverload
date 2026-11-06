@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:raw_apple_gold"
+  },
+  "result": {
+    "id": "minecraft:apple",
+    "count": 1
+  },
+  "experience": 0.35,
+  "cookingtime": 200
+}

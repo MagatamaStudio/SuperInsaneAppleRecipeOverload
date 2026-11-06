@@ -43,6 +43,14 @@ public final class SiaoItems {
     public static final DeferredItem<Item> CHAOS_APPLE =
             ITEMS.registerSimpleItem("chaos_apple");
 
+    /**
+     * 粗苹果金：苹果线的粗形态第 0 重（原构想 L4）。
+     *
+     * <p>用 {@link SiaoCompressedItem} 而不是普通 Item —— 原需求要「附魔粗苹果金」，
+     * 它得和压缩单位一样会改名发光。</p>
+     */
+    public static final DeferredItem<Item> RAW_APPLE_GOLD =
+            ITEMS.registerItem("raw_apple_gold", SiaoCompressedItem::new);
     /** 苹果配置器：右键机器的某个面来切该面的通行规则（Mek 式）。 */
     public static final DeferredItem<Item> CONFIGURATOR =
             ITEMS.registerItem("configurator", SiaoConfiguratorItem::new);
@@ -81,7 +89,15 @@ public final class SiaoItems {
 
     /** 由 {@link SiaoBlocks} 在注册方块后回调，保证 BlockItem 与方块同名。 */
     static DeferredItem<BlockItem> registerBlockItem(String id, DeferredBlock<Block> block) {
-        DeferredItem<BlockItem> item = ITEMS.registerSimpleBlockItem(block);
+        // 用自定义 BlockItem：原需求要「附魔压缩锭块」，而附魔状态是数据组件，
+        // 方块物品也得会改名和发光（普通 BlockItem 覆写不了）
+        DeferredItem<BlockItem> item = ITEMS.registerItem(id, properties -> {
+            SiaoCompressedBlockItem blockItem = new SiaoCompressedBlockItem(block.get(), properties);
+            // 手动建立 block -> item 映射。走 registerItem 不会替我们做这件事，
+            // 漏了的话 block.asItem() 会返回 AIR，掉落物和创造栏都会坏
+            blockItem.registerBlocks(net.minecraft.world.item.Item.BY_BLOCK, blockItem);
+            return blockItem;
+        });
         BLOCK_ITEMS.put(id, item);
         return item;
     }
@@ -124,6 +140,10 @@ public final class SiaoItems {
 
     public static Collection<DeferredItem<SiaoUpgradeItem>> upgrades() {
         return UPGRADES.values();
+    }
+
+    public static DeferredItem<Item> rawAppleGold() {
+        return RAW_APPLE_GOLD;
     }
 
     public static DeferredItem<Item> configurator() {

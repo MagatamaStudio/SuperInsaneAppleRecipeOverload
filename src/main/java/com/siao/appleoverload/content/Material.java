@@ -9,18 +9,25 @@ import java.util.Locale;
  * 两者由 {@link SiaoNames} 统一拼接。</p>
  */
 public enum Material {
-    IRON("iron", "铁锭", "Iron Ingot", Form.INGOT, true),
-    GOLD("gold", "金锭", "Gold Ingot", Form.INGOT, true),
-    COPPER("copper", "铜锭", "Copper Ingot", Form.INGOT, true),
-    NETHERITE("netherite", "下界合金锭", "Netherite Ingot", Form.INGOT, false),
-    DIAMOND("diamond", "钻石", "Diamond", Form.GEM, false),
-    EMERALD("emerald", "绿宝石", "Emerald", Form.GEM, false),
-    LAPIS("lapis", "青金石", "Lapis Lazuli", Form.GEM, false),
-    AMETHYST("amethyst", "紫水晶", "Amethyst Shard", Form.GEM, false),
-    QUARTZ("quartz", "下界石英", "Nether Quartz", Form.GEM, false),
-    COAL("coal", "煤", "Coal", Form.DUST, false),
-    REDSTONE("redstone", "红石", "Redstone", Form.DUST, false),
-    APPLE("apple", "苹果锭", "Apple Ingot", Form.INGOT, false);
+    IRON("iron", "铁锭", "Iron Ingot", Form.INGOT, "粗铁", "Raw Iron"),
+    GOLD("gold", "金锭", "Gold Ingot", Form.INGOT, "粗金", "Raw Gold"),
+    COPPER("copper", "铜锭", "Copper Ingot", Form.INGOT, "粗铜", "Raw Copper"),
+    /**
+     * 苹果金线。
+     *
+     * <p>原构想 L4 整段都是「粗苹果金 / 一重压缩粗苹果金 / 附魔一重压缩粗苹果金块」，
+     * 所以苹果这条线必须跟铁金铜一样有粗形态。它的第 0 重不是原版物品，
+     * 而是自制物品 {@code siao:raw_apple_gold}（苹果 + 粗金），见 {@link SiaoItems}。</p>
+     */
+    APPLE("apple", "苹果锭", "Apple Ingot", Form.INGOT, "粗苹果金", "Raw Apple Gold"),
+    NETHERITE("netherite", "下界合金锭", "Netherite Ingot", Form.INGOT, null, null),
+    DIAMOND("diamond", "钻石", "Diamond", Form.GEM, null, null),
+    EMERALD("emerald", "绿宝石", "Emerald", Form.GEM, null, null),
+    LAPIS("lapis", "青金石", "Lapis Lazuli", Form.GEM, null, null),
+    AMETHYST("amethyst", "紫水晶", "Amethyst Shard", Form.GEM, null, null),
+    QUARTZ("quartz", "下界石英", "Nether Quartz", Form.GEM, null, null),
+    COAL("coal", "煤", "Coal", Form.DUST, null, null),
+    REDSTONE("redstone", "红石", "Redstone", Form.DUST, null, null);
 
     /** 材料形态，决定贴图基底与命名手感。 */
     public enum Form {
@@ -38,14 +45,17 @@ public enum Material {
     private final String zhUnit;
     private final String enUnit;
     private final Form form;
-    private final boolean hasRawForm;
+    /** 粗形态中文名；{@code null} 表示这条线没有粗形态。 */
+    private final String zhRaw;
+    private final String enRaw;
 
-    Material(String id, String zhUnit, String enUnit, Form form, boolean hasRawForm) {
+    Material(String id, String zhUnit, String enUnit, Form form, String zhRaw, String enRaw) {
         this.id = id;
         this.zhUnit = zhUnit;
         this.enUnit = enUnit;
         this.form = form;
-        this.hasRawForm = hasRawForm;
+        this.zhRaw = zhRaw;
+        this.enRaw = enRaw;
     }
 
     public String id() {
@@ -64,9 +74,19 @@ public enum Material {
         return form;
     }
 
-    /** 铁/金/铜有「粗 X」原矿形态，可以再压一条线。 */
+    /** 铁/金/铜/苹果有「粗 X」形态，可以再压一条线。 */
     public boolean hasRawForm() {
-        return hasRawForm;
+        return zhRaw != null;
+    }
+
+    /** 粗形态中文名，如「粗苹果金」。无粗形态时抛错，调用方必须先问 {@link #hasRawForm()}。 */
+    public String zhRaw() {
+        return zhRaw;
+    }
+
+    /** 粗形态英文名，如「Raw Apple Gold」。 */
+    public String enRaw() {
+        return enRaw;
     }
 
     /** 该材料在 {@code tier} 重的等价基础材料数量：9^tier。 */

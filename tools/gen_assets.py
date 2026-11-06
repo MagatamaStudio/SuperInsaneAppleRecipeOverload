@@ -53,11 +53,13 @@ MATERIALS = [
     ("quartz",    "下界石英",   "Nether Quartz",   "QUARTZ",             "QUARTZ_BLOCK",    False),
     ("coal",      "煤",         "Coal",            "COAL",               "COAL_BLOCK",      False),
     ("redstone",  "红石",       "Redstone",        "REDSTONE",           "REDSTONE_BLOCK",  False),
-    ("apple",     "苹果锭",     "Apple Ingot",     "APPLE",              None,              False),
+    ("apple",     "苹果锭",     "Apple Ingot",     "APPLE",              None,              True),
 ]
 
-RAW_BASE = {"iron": "RAW_IRON", "gold": "RAW_GOLD", "copper": "RAW_COPPER"}
-RAW_BLOCK_BASE = {"iron": "RAW_IRON_BLOCK", "gold": "RAW_GOLD_BLOCK", "copper": "RAW_COPPER_BLOCK"}
+RAW_BASE = {"iron": "RAW_IRON", "gold": "RAW_GOLD", "copper": "RAW_COPPER", "apple": "RAW_GOLD"}
+RAW_BLOCK_BASE = {"iron": "RAW_IRON_BLOCK", "gold": "RAW_GOLD_BLOCK", "copper": "RAW_COPPER_BLOCK", "apple": "RAW_GOLD_BLOCK"}
+# 粗形态名覆盖：默认是「去锭加粗」，苹果线要的是「粗苹果金」
+RAW_NAME = {"apple": ("粗苹果金", "Raw Apple Gold")}
 
 
 # --------------------------------------------------------------------------- 贴图
@@ -422,6 +424,18 @@ def make_shard_texture() -> Image.Image:
 
 
 
+
+def make_raw_apple_gold_texture() -> Image.Image:
+    """粗苹果金：粗金的形状，表面带一层苹果红。"""
+    base = load_base("RAW_GOLD", ITEM_SIZE).convert("RGBA")
+    overlay = Image.new("RGBA", (ITEM_SIZE, ITEM_SIZE), (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    od.ellipse([ITEM_SIZE * 0.30, ITEM_SIZE * 0.30, ITEM_SIZE * 0.70, ITEM_SIZE * 0.70],
+               fill=(198, 46, 40, 150))
+    od.ellipse([ITEM_SIZE * 0.38, ITEM_SIZE * 0.36, ITEM_SIZE * 0.46, ITEM_SIZE * 0.44],
+               fill=(255, 176, 160, 200))
+    return Image.alpha_composite(base, overlay)
+
 def make_configurator_texture() -> Image.Image:
     """配置器：一把扳手轮廓 + 红色握柄。"""
     size = ITEM_SIZE
@@ -721,15 +735,19 @@ def main() -> None:
             counts["block"] += 1
 
         if has_raw:
-            raw_zh = zh[:-1] if zh.endswith("锭") else zh
-            raw_en = en_raw(en)
+            override = RAW_NAME.get(mat_id)
+            if override:
+                raw_zh, raw_en = override
+            else:
+                raw_zh = zh[:-1] if zh.endswith("锭") else zh
+                raw_en = f"Raw {en_raw(en)}"
             raw_color = average_color(load_base(RAW_BLOCK_BASE[mat_id], 64))
             for tier in range(1, MAX_TIER + 1):
                 emit_item(raw_unit_id(mat_id, tier), RAW_BASE[mat_id], tier,
-                          zh_raw(zh, tier), f"{num_prefix(tier)}Compressed Raw {raw_en}")
+                          f"{ZH_TIERS[tier]}重压缩{raw_zh}", f"{num_prefix(tier)}Compressed {raw_en}")
                 counts["item"] += 1
                 emit_block(raw_block_id(mat_id, tier), raw_color, tier,
-                           zh_raw(zh, tier) + "块", f"{num_prefix(tier)}Compressed Raw {raw_en} Block")
+                           f"{ZH_TIERS[tier]}重压缩{raw_zh}块", f"{num_prefix(tier)}Compressed {raw_en} Block")
                 counts["block"] += 1
 
     # ---- 机器 ---------------------------------------------------------------
@@ -764,7 +782,8 @@ def main() -> None:
     # ---- 奇点碎片 / 奇点 / 混沌苹果 -----------------------------------------
     specials = [
         ("configurator", "苹果配置器", "Apple Configurator", make_configurator_texture),
-        ("singularity_shard", "奇点碎片", "Singularity Shard", make_shard_texture),
+        ("raw_apple_gold", "粗苹果金", "Raw Apple Gold", make_raw_apple_gold_texture),
+    ("singularity_shard", "奇点碎片", "Singularity Shard", make_shard_texture),
         ("singularity", "绝对苹果奇点", "Absolute Apple Singularity", make_singularity_texture),
         ("chaos_apple", "混沌苹果", "Chaos Apple", make_chaos_apple_texture),
     ]

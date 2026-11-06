@@ -5,6 +5,7 @@ import com.siao.appleoverload.config.SiaoConfig;
 import com.siao.appleoverload.machine.AppleMachineBlockEntity;
 import com.siao.appleoverload.machine.MachineKind;
 import com.siao.appleoverload.machine.SideMode;
+import com.siao.appleoverload.recipe.ChaosAppleRecipe;
 import com.siao.appleoverload.recipe.CompressionIndex;
 import com.siao.appleoverload.recipe.SiaoCompressionRecipe;
 import com.siao.appleoverload.upgrade.SiaoUpgrades;
@@ -156,14 +157,32 @@ public final class SiaoSelfTest {
         ItemStack split = decompress.assemble(oneUnit2, registries);
         check("拆 1 个普通二重：出 9 个一重",
                 sameItem(split, unit1) && split.getCount() == 9, describe(split));
-        check("拆 1 个附魔二重：不匹配（堵复制漏洞）",
-                !decompress.matches(single(enchantedUnit2), null));
+        // 原需求要「附魔一重压缩苹果锭块」，所以附魔必须能穿透拆分。
+        // 这不构成复制：9 个附魔一重 ↔ 1 个附魔二重，附魔件数量守恒。
+        check("拆 1 个附魔二重：匹配", decompress.matches(single(enchantedUnit2), null));
+        ItemStack splitEnchanted = decompress.assemble(single(enchantedUnit2), registries);
+        check("拆附魔二重：出 9 个附魔一重",
+                sameItem(splitEnchanted, unit1) && splitEnchanted.getCount() == 9
+                        && SiaoComponents.isEnchanted(splitEnchanted),
+                describe(splitEnchanted) + " enchanted=" + SiaoComponents.isEnchanted(splitEnchanted));
 
         // ---- 装块 / 拆块 ----------------------------------------------------
         SiaoCompressionRecipe pack = require(server, "siao:pack_iron_1x_block");
         ItemStack packed = pack.assemble(grid(fill(unit1, 9)), registries);
         check("9 个一重 → 1 个一重块", sameItem(packed, block1) && packed.getCount() == 1,
                 describe(packed));
+
+        // 原需求 L2/L3：附魔一重压缩苹果锭块必须存在
+        ItemStack packedEnchanted = pack.assemble(grid(fill(unit1Enchanted, 9)), registries);
+        check("9 个附魔一重 → 1 个附魔一重块",
+                sameItem(packedEnchanted, block1) && SiaoComponents.isEnchanted(packedEnchanted),
+                describe(packedEnchanted) + " enchanted=" + SiaoComponents.isEnchanted(packedEnchanted));
+        check("方块物品是自定义 BlockItem（附魔会改名发光）",
+                block1.getItem() instanceof SiaoCompressedBlockItem,
+                block1.getItem().getClass().getSimpleName());
+        check("block.asItem() 映射正常（否则掉落物会变成空气）",
+                SiaoBlocks.unitBlock(Material.IRON, 1).get().asItem() == block1.getItem(),
+                SiaoBlocks.unitBlock(Material.IRON, 1).get().asItem().toString());
 
         SiaoCompressionRecipe unpack = require(server, "siao:unpack_iron_1x_block");
         ItemStack unpacked = unpack.assemble(single(block1), registries);
@@ -175,7 +194,7 @@ public final class SiaoSelfTest {
         long loaded = server.getRecipeManager().getRecipes().stream()
                 .filter(holder -> holder.value() instanceof SiaoCompressionRecipe)
                 .count();
-        check("自定义压缩配方装载数 = 542", loaded == 542L, loaded + " 条");
+        check("自定义压缩配方装载数 = 578", loaded == 578L, loaded + " 条");
 
         machineCases(server);
         sideConfigCases(server);
@@ -608,21 +627,54 @@ public final class SiaoSelfTest {
         ItemStack produced = singularityRecipe.assemble(single(tier9Apple), registries);
         check("奇点：产物 = siao:singularity", sameItem(produced, singularity), describe(produced));
 
-        // 终极木棍：必须附魔，产物是木棍且不带附魔
+        // 终极木棍：原构想 L13 —— 附魔一重压缩**粗苹果金块** → 1 根木棍
         SiaoCompressionRecipe ultimate = require(server, "siao:ultimate_stick");
-        ItemStack enchantedApple = tier1Apple.copy();
-        SiaoComponents.makeEnchanted(enchantedApple, 3);
-        check("终极木棍：普通苹果锭不匹配", !ultimate.matches(single(tier1Apple), null), "");
-        check("终极木棍：附魔苹果锭匹配", ultimate.matches(single(enchantedApple), null), "不匹配");
-        ItemStack stick = ultimate.assemble(single(enchantedApple), registries);
+        ItemStack rawAppleBlock = new ItemStack(SiaoBlocks.rawBlock(Material.APPLE, 1).get());
+        ItemStack enchantedRawBlock = rawAppleBlock.copy();
+        SiaoComponents.makeEnchanted(enchantedRawBlock, 3);
+        check("终极木棍：普通粗苹果金块不匹配", !ultimate.matches(single(rawAppleBlock), null), "");
+        check("终极木棍：附魔粗苹果金块匹配", ultimate.matches(single(enchantedRawBlock), null), "不匹配");
+        ItemStack stick = ultimate.assemble(single(enchantedRawBlock), registries);
         check("终极木棍：产物是 1 根木棍",
                 sameItem(stick, new ItemStack(Items.STICK)) && stick.getCount() == 1, describe(stick));
         check("终极木棍：木棍不带附魔", !SiaoComponents.isEnchanted(stick), describe(stick));
 
-        // 混沌苹果：普通 shaped 配方，产物固定
-        check("混沌苹果：配方已装载",
-                server.getRecipeManager().byKey(ResourceLocation.parse("siao:craft_chaos_apple")).isPresent(),
-                "找不到 craft_chaos_apple");
+        // 混沌苹果：原构想 L11 —— 附魔粗苹果金 + 附魔苹果锭 → 随机 NBT 混沌苹果
+        ChaosAppleRecipe chaos = (ChaosAppleRecipe) server.getRecipeManager()
+                .byKey(ResourceLocation.parse("siao:chaos_apple"))
+                .orElseThrow().value();
+        ItemStack rawAppleUnit = new ItemStack(SiaoItems.rawUnit(Material.APPLE, 1).get());
+        ItemStack enchantedRawUnit = rawAppleUnit.copy();
+        SiaoComponents.makeEnchanted(enchantedRawUnit, 1);
+        ItemStack enchantedApple = tier1Apple.copy();
+        SiaoComponents.makeEnchanted(enchantedApple, 3);
+
+        List<ItemStack> pair = new ArrayList<>(9);
+        pair.add(enchantedRawUnit);
+        pair.add(enchantedApple);
+        for (int i = 2; i < 9; i++) {
+            pair.add(ItemStack.EMPTY);
+        }
+        CraftingInput chaosInput = CraftingInput.of(3, 3, pair);
+        check("混沌苹果：附魔粗苹果金 + 附魔苹果锭 匹配",
+                chaos.matches(chaosInput, server.overworld()), "不匹配");
+
+        List<ItemStack> notEnchanted = new ArrayList<>(9);
+        notEnchanted.add(rawAppleUnit);
+        notEnchanted.add(tier1Apple);
+        for (int i = 2; i < 9; i++) {
+            notEnchanted.add(ItemStack.EMPTY);
+        }
+        check("混沌苹果：不附魔不匹配",
+                !chaos.matches(CraftingInput.of(3, 3, notEnchanted), server.overworld()), "");
+
+        ItemStack chaosApple = chaos.assemble(chaosInput, registries);
+        check("混沌苹果：产物是混沌苹果且带附魔",
+                sameItem(chaosApple, new ItemStack(SiaoItems.chaosApple().get()))
+                        && SiaoComponents.isEnchanted(chaosApple),
+                describe(chaosApple));
+        int tierA = SiaoComponents.enchantTier(chaos.assemble(chaosInput, registries));
+        check("混沌苹果：随机强度落在 1–9", tierA >= 1 && tierA <= 9, "tier=" + tierA);
     }
 
     /**
@@ -636,10 +688,10 @@ public final class SiaoSelfTest {
         ItemStack unit2 = new ItemStack(SiaoItems.unit(Material.IRON, 2).get());
         ItemStack shard = new ItemStack(SiaoItems.singularityShard().get());
 
-        // 285 = 15 个原版输入 + 135 个压缩单位 + 135 个压缩块
+        // 304 = 15 个原版输入 + 1 个粗苹果金 + 144 个压缩单位（108 普通 + 36 粗）+ 144 个压缩块
         // （压缩/拆分/装块/拆块四类配方现在都在同一张索引里）
-        check("压缩索引覆盖 285 种输入",
-                CompressionIndex.size(server.getRecipeManager()) == 285,
+        check("压缩索引覆盖 304 种输入",
+                CompressionIndex.size(server.getRecipeManager()) == 304,
                 CompressionIndex.size(server.getRecipeManager()) + " 种");
 
         // ★ L12 科技树绑定：压缩链（单位 ↔ 单位、单位 ↔ 块）的东西不能在工作台合成。
