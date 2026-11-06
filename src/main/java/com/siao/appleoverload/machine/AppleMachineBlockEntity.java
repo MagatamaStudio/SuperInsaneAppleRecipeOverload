@@ -200,10 +200,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         return sides[side.ordinal()];
     }
 
-    /** 调试用：六面规则的打包值。 */
-    public int packedSideModes() {
-        return packedSides();
-    }
+
 
     public void setSideMode(Direction side, SideMode mode) {
         sides[side.ordinal()] = mode;
@@ -222,15 +219,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         return next;
     }
 
-    /**
-     * 玩家点一下配置按钮：切掉「玩家所站的那个面」的模式。
-     *
-     * <p>没做 AE2 那种六面小方块 UI —— 那个要画立方体、要处理鼠标拾取，
-     * 而界面我无法验证。用「你站在哪边就改哪边」的规则，行为可预测且不用画图。</p>
-     */
-    public SideMode cycleSideNear(Player player) {
-        return cycleSide(faceNear(player));
-    }
+
 
     /** 玩家所站的那个面（给界面显示用）。 */
     public Direction faceNear(Player player) {

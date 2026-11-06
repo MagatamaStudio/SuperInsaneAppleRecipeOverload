@@ -4,7 +4,6 @@ import com.siao.appleoverload.upgrade.SiaoUpgradeItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -90,43 +89,6 @@ public class AppleMachineMenu extends AbstractContainerMenu {
 
     public int maxProgress() {
         return machine.containerData().get(AppleMachineBlockEntity.DATA_MAX_PROGRESS);
-    }
-
-    /** 玩家所站的那个面（界面按钮显示它）。 */
-    public Direction facingSide(Player player) {
-        return machine.faceNear(player);
-    }
-
-    public SideMode sideMode(Player player) {
-        return machine.sideMode(machine.faceNear(player));
-    }
-
-    /** 按钮 id：0 = 循环「玩家所站那个面」的通行规则。 */
-    public static final int BUTTON_CYCLE_SIDE = 0;
-
-    @Override
-    public boolean clickMenuButton(Player player, int id) {
-        if (id == BUTTON_CYCLE_SIDE) {
-            Direction face = machine.faceNear(player);
-            machine.cycleSideNear(player);
-            SideMode now = machine.sideMode(face);
-            // 一个字的小按钮反馈太弱，直接给动作栏提示，点了立刻能看到
-            player.displayClientMessage(
-                    Component.literal(faceName(face) + "面 → " + now.zh()), true);
-            return true;
-        }
-        return false;
-    }
-
-    private static String faceName(Direction face) {
-        return switch (face) {
-            case DOWN -> "下";
-            case UP -> "上";
-            case NORTH -> "北";
-            case SOUTH -> "南";
-            case WEST -> "西";
-            case EAST -> "东";
-        };
     }
 
     @Override
