@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BB",
+    "BB"
+  ],
+  "key": {
+    "B": {
+      "item": "siao:exposed_compressed_1x_copper"
+    }
+  },
+  "result": {
+    "id": "siao:exposed_compressed_1x_copper_grate",
+    "count": 4
+  }
+}

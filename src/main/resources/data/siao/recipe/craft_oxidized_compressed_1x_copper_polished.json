@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BB",
+    "BB"
+  ],
+  "key": {
+    "B": {
+      "item": "siao:oxidized_compressed_1x_copper"
+    }
+  },
+  "result": {
+    "id": "siao:oxidized_compressed_1x_copper_polished",
+    "count": 4
+  }
+}

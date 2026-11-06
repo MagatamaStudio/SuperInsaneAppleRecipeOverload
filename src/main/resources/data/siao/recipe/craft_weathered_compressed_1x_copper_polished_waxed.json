@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BB",
+    "BB"
+  ],
+  "key": {
+    "B": {
+      "item": "siao:weathered_compressed_1x_copper_waxed"
+    }
+  },
+  "result": {
+    "id": "siao:weathered_compressed_1x_copper_polished_waxed",
+    "count": 4
+  }
+}

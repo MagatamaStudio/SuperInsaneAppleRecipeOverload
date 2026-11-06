@@ -31,7 +31,7 @@ public final class SiaoItems {
     private static final Map<String, DeferredItem<BlockItem>> BLOCK_ITEMS = new LinkedHashMap<>();
     private static final Map<ResourceLocation, DeferredItem<SiaoUpgradeItem>> UPGRADES = new LinkedHashMap<>();
 
-    /** 奇点碎片：离心机从附魔压缩单位里回收出来的东西。 */
+    /** 奇点碎片：离心机处理混沌苹果得到（不再从附魔单位产出）。 */
     public static final DeferredItem<Item> SINGULARITY_SHARD =
             ITEMS.registerSimpleItem("singularity_shard");
 

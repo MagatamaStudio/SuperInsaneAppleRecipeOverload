@@ -413,6 +413,14 @@ public final class SiaoSelfTest {
         check("铜楼梯在 #mineable/pickaxe 里",
                 copperStairs.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE),
                 copperStairs.getBlock().toString());
+
+        // 四种整块形状 × 4 氧化阶 × 涂蜡/不涂蜡 = 32 条合成配方；
+        // 缺了它们这些方块只能创造模式拿
+        long shapeRecipes = server.getRecipeManager().getRecipes().stream()
+                .filter(holder -> holder.id().getPath().matches(
+                        "craft_(exposed_|weathered_|oxidized_)?compressed_1x_copper_(cut|polished|grate|chiseled)(_waxed)?"))
+                .count();
+        check("铜：四种整块形状都有合成配方（32 条）", shapeRecipes == 32, shapeRecipes + " 条");
     }
 
     /** 阶段 7：配置项。 */

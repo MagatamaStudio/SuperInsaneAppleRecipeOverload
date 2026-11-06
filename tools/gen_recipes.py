@@ -222,6 +222,18 @@ def main() -> None:
             shaped(f"craft_{slab_id}",
                    ["BBB"], {"B": source}, f"{MOD_ID}:{slab_id}", 6)
 
+            # 四种整块形状：2x2 基础块 -> 4 个该形状。
+            # 之前只生成了楼梯和台阶，cut/polished/grate/chiseled 32 个方块
+            # 根本没有合成路径（只能靠创造模式拿）
+            for shape_id, pattern in (
+                ("cut", ["BB", "BB"]),
+                ("polished", ["BB", "BB"]),
+                ("grate", ["BB", "BB"]),
+                ("chiseled", ["BB", "BB"]),
+            ):
+                target = f"{stage}compressed_1x_copper_{shape_id}{suffix}"
+                shaped(f"craft_{target}", pattern, {"B": source}, f"{MOD_ID}:{target}", 4)
+
     print(f"配方文件: {written}")
 
 
