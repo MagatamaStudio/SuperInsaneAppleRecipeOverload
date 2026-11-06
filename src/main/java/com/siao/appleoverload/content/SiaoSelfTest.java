@@ -17,7 +17,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -183,7 +186,92 @@ public final class SiaoSelfTest {
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
+        recipeAuditCases(server, registries);
         configCases(server);
+    }
+
+    /**
+     * 全量配方审计：**每一条 siao 配方都真的跑一遍 matches + assemble**。
+     *
+     * <p>只检查 JSON 结构是不够的 —— 结构合法但配方永远匹配不上的情况，
+     * 只有真的喂一个合成格进去才会暴露。</p>
+     */
+    private static void recipeAuditCases(MinecraftServer server, HolderLookup.Provider registries) {
+        int compressionTotal = 0;
+        int compressionBad = 0;
+        int shapedTotal = 0;
+        int shapedBad = 0;
+        String firstBad = null;
+
+        for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
+            if (!SiaoMod.MOD_ID.equals(holder.id().getNamespace())) {
+                continue;
+            }
+            Recipe<?> recipe = holder.value();
+
+            if (recipe instanceof SiaoCompressionRecipe compression) {
+                compressionTotal++;
+                CraftingInput input = compressionInput(compression);
+                boolean matched = input != null && compression.matches(input, server.overworld());
+                ItemStack output = matched ? compression.assemble(input, registries) : ItemStack.EMPTY;
+                if (!matched || output.isEmpty()
+                        || !ItemStack.isSameItem(output, compression.getResultItem(registries))) {
+                    compressionBad++;
+                    if (firstBad == null) {
+                        firstBad = holder.id() + " matched=" + matched + " out=" + output
+                                + " 期望=" + compression.getResultItem(registries);
+                    }
+                }
+            } else if (recipe instanceof ShapedRecipe shaped) {
+                shapedTotal++;
+                CraftingInput input = shapedInput(shaped);
+                boolean matched = input != null && shaped.matches(input, server.overworld());
+                ItemStack output = matched ? shaped.assemble(input, registries) : ItemStack.EMPTY;
+                if (!matched || output.isEmpty()) {
+                    shapedBad++;
+                    if (firstBad == null) {
+                        firstBad = holder.id() + " matched=" + matched + " out=" + output;
+                    }
+                }
+            }
+        }
+
+        check("配方审计：压缩配方全部可匹配可产出（" + compressionTotal + " 条）",
+                compressionBad == 0, firstBad);
+        check("配方审计：shaped 配方全部可匹配可产出（" + shapedTotal + " 条）",
+                shapedBad == 0, firstBad);
+    }
+
+    /** 按配方声明的输入个数摆一个 3x3 合成格。 */
+    private static CraftingInput compressionInput(SiaoCompressionRecipe recipe) {
+        ItemStack[] candidates = recipe.ingredient().getItems();
+        if (candidates.length == 0) {
+            return null;
+        }
+        ItemStack base = candidates[0].copyWithCount(1);
+        if (recipe.enchantMode() == SiaoCompressionRecipe.EnchantMode.REQUIRE) {
+            SiaoComponents.makeEnchanted(base, 1);
+        }
+        List<ItemStack> slots = new ArrayList<>(9);
+        for (int i = 0; i < 9; i++) {
+            slots.add(i < recipe.count() ? base.copy() : ItemStack.EMPTY);
+        }
+        return CraftingInput.of(3, 3, slots);
+    }
+
+    /** 按 pattern 逐格摆；空格留空。 */
+    private static CraftingInput shapedInput(ShapedRecipe recipe) {
+        int width = recipe.getWidth();
+        int height = recipe.getHeight();
+        List<ItemStack> slots = new ArrayList<>(width * height);
+        for (Ingredient ingredient : recipe.getIngredients()) {
+            ItemStack[] items = ingredient.getItems();
+            slots.add(items.length == 0 ? ItemStack.EMPTY : items[0].copy());
+        }
+        if (slots.size() != width * height) {
+            return null;
+        }
+        return CraftingInput.of(width, height, slots);
     }
 
     /** 配置器（Mek 式）与发电机推送。 */
