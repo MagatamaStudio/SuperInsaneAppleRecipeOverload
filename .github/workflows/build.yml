@@ -73,6 +73,16 @@ jobs:
           mkdir -p run
           printf 'eula=true\n' > run/eula.txt
 
+      # 让 CI 也真的装上 AE2：软依赖相关的自检项不装 AE2 只会被 SKIP
+      - name: 下载 AE2 与 GuideME
+        run: |
+          mkdir -p run/mods
+          curl -fsSL -o run/mods/ae2.jar \
+            "https://api.modrinth.com/maven/maven/modrinth/ae2/19.2.18/ae2-19.2.18.jar"
+          curl -fsSL -o run/mods/guideme.jar \
+            "https://api.modrinth.com/maven/maven/modrinth/guideme/21.1.20/guideme-21.1.20.jar"
+          ls -la run/mods
+
       # SIAO_SELFTEST 由 build.gradle 读环境变量传给 JVM，自检跑完自动关服
       - name: 跑服务端自检
         run: SIAO_SELFTEST=true ./gradlew runServer --stacktrace
@@ -84,6 +94,8 @@ jobs:
           echo "---- 配方解析错误（应为空）----"
           grep "Parsing error loading recipe" run/logs/latest.log || true
           grep -q "RESULT pass=[0-9]* fail=0" run/logs/latest.log
+          # 纯 ASCII 标记：装了 AE2 就不能是 skipped
+          grep -q "AE2-CHECK ok" run/logs/latest.log
           if grep -q "Parsing error loading recipe" run/logs/latest.log; then
             echo "存在配方解析错误" >&2
             exit 1

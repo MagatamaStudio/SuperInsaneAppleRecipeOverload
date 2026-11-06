@@ -10,8 +10,10 @@ import appeng.api.stacks.KeyCounter;
 import com.siao.appleoverload.machine.AppleMachineBlockEntity;
 import com.siao.appleoverload.machine.MachineKind;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import com.siao.appleoverload.machine.SiaoMachineRegistry;
 
@@ -38,6 +40,29 @@ public final class Ae2Integration {
                 (machine, side) -> machine.machineKind() == MachineKind.COMPRESSOR
                         ? new Ae2CraftingMachine(machine)
                         : null);
+    }
+
+    /**
+     * 给自检用的验证入口。
+     *
+     * <p>由 {@code SiaoSelfTest} 通过**反射**调用 —— 这样自检本身不硬链接 AE2 的类，
+     * 没装 AE2 的 CI 环境照样能编译和运行。</p>
+     *
+     * @return null 表示通过，否则返回失败原因
+     */
+    public static String verify(Level level, BlockPos pos) {
+        ICraftingMachine capability = level.getCapability(AECapabilities.CRAFTING_MACHINE, pos, Direction.UP);
+        if (capability == null) {
+            return "该位置没有 ICraftingMachine 能力";
+        }
+        if (!capability.acceptsPlans()) {
+            return "acceptsPlans() 返回 false";
+        }
+        PatternContainerGroup info = capability.getCraftingMachineInfo();
+        if (info == null || info.name() == null) {
+            return "getCraftingMachineInfo() 为空";
+        }
+        return null;
     }
 
     /** 真正的实现。 */

@@ -18,8 +18,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.DataMapHooks;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
@@ -173,9 +175,59 @@ public final class SiaoSelfTest {
 
         machineCases(server);
         sideConfigCases(server);
+        batchCases(server);
+        ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
         configCases(server);
+    }
+
+    /** 整批推料：AE2 档位 1 的地基，不装 AE2 也能测。 */
+    private static void batchCases(MinecraftServer server) {
+        AppleMachineBlockEntity machine = place(server, MachineKind.COMPRESSOR, new BlockPos(6, 206, 0));
+        check("整批推料：9 个铁锭一次吃下",
+                machine.acceptCraftingBatch(new ItemStack(Items.IRON_INGOT, 9)), "被拒");
+        check("整批推料：吃下后输入槽共 9 个",
+                inputCount(machine) == 9, inputCount(machine) + " 个");
+        check("整批推料：超出容量的批次整批拒绝",
+                !machine.acceptCraftingBatch(new ItemStack(Items.IRON_INGOT, 600)), "居然塞下了");
+        check("整批推料：被拒时一个都没多进",
+                inputCount(machine) == 9, inputCount(machine) + " 个");
+    }
+
+    private static int inputCount(AppleMachineBlockEntity machine) {
+        int total = 0;
+        int start = machine.machineKind().inputStart();
+        for (int slot = start; slot < start + machine.machineKind().inputSlots(); slot++) {
+            total += machine.getItemHandler().getStackInSlot(slot).getCount();
+        }
+        return total;
+    }
+
+    /**
+     * AE2 专项：只有装了 AE2 才跑。
+     *
+     * <p>用反射调用 {@code Ae2Integration#verify} —— 自检类本身不引用任何 AE2 类型，
+     * 所以没装 AE2 的 CI 环境编译和运行都不受影响。</p>
+     */
+    private static void ae2Cases(MinecraftServer server) {
+        if (!ModList.get().isLoaded("ae2")) {
+            SiaoMod.LOGGER.info("[SIAO-TEST] SKIP  AE2 未安装，跳过 AE2 专项");
+            SiaoMod.LOGGER.info("[SIAO-TEST] AE2-CHECK skipped");
+            return;
+        }
+        BlockPos pos = new BlockPos(8, 206, 0);
+        place(server, MachineKind.COMPRESSOR, pos);
+        try {
+            Class<?> integration = Class.forName("com.siao.appleoverload.compat.Ae2Integration");
+            java.lang.reflect.Method verify = integration.getMethod("verify", Level.class, BlockPos.class);
+            Object failure = verify.invoke(null, server.overworld(), pos);
+            check("AE2：压缩机暴露了 ICraftingMachine 能力", failure == null, String.valueOf(failure));
+            SiaoMod.LOGGER.info("[SIAO-TEST] AE2-CHECK {}", failure == null ? "ok" : "failed");
+        } catch (ReflectiveOperationException e) {
+            check("AE2：反射调用失败", false, e.toString());
+            SiaoMod.LOGGER.error("[SIAO-TEST] AE2-CHECK failed");
+        }
     }
 
     /** 侧配置：每个面的物品通行规则。 */
