@@ -12,10 +12,18 @@ import com.siao.appleoverload.machine.MachineKind;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
+import appeng.api.config.Actionable;
+import appeng.api.networking.security.IActionSource;
+import appeng.api.storage.MEStorage;
 import com.siao.appleoverload.machine.SiaoMachineRegistry;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -40,6 +48,12 @@ public final class Ae2Integration {
                 (machine, side) -> machine.machineKind() == MachineKind.COMPRESSOR
                         ? new Ae2CraftingMachine(machine)
                         : null);
+
+        // 档位 2：long 语义的存储门面。
+        // ⚠️ 注册它之后 AE2 就不再走 IItemHandler 了，所以这一层必须完全正确：
+        //    SIMULATE 必须准确且不改状态，否则会吞料。
+        event.registerBlockEntity(AECapabilities.ME_STORAGE, SiaoMachineRegistry.MACHINE.get(),
+                Ae2Storage::new);
     }
 
     /**
@@ -63,6 +77,116 @@ public final class Ae2Integration {
             return "getCraftingMachineInfo() 为空";
         }
         return null;
+    }
+
+    /**
+     * 档位 2 的验证入口：ME_STORAGE 的 SIMULATE 必须准确且不改状态。
+     *
+     * @return null 表示通过
+     */
+    public static String verifyStorage(Level level, BlockPos pos) {
+        MEStorage storage = level.getCapability(AECapabilities.ME_STORAGE, pos, Direction.UP);
+        if (storage == null) {
+            return "该位置没有 ME_STORAGE 能力";
+        }
+        if (storage.getDescription() == null) {
+            return "getDescription() 为空";
+        }
+
+        IActionSource source = IActionSource.empty();
+        AEItemKey iron = AEItemKey.of(new ItemStack(Items.IRON_INGOT));
+        if (iron == null) {
+            return "AEItemKey.of 返回 null";
+        }
+
+        long simulated = storage.insert(iron, 9, Actionable.SIMULATE, source);
+        if (simulated != 9) {
+            return "SIMULATE 应能插入 9，实际 " + simulated;
+        }
+        if (!storage.getAvailableStacks().isEmpty()) {
+            return "SIMULATE 之后内容非空 —— 模拟改动了状态，这就是吞料的根源";
+        }
+
+        long inserted = storage.insert(iron, 9, Actionable.MODULATE, source);
+        if (inserted != 9) {
+            return "MODULATE 只插入了 " + inserted;
+        }
+
+        long overflow = storage.insert(iron, 100_000, Actionable.MODULATE, source);
+        long remainingSpace = 9L * 64L - 9L;
+        if (overflow > remainingSpace) {
+            return "超容量插入返回 " + overflow + "，超过实际剩余空间 " + remainingSpace + " —— 会谎报容量";
+        }
+
+        long extractedWhenEmpty = storage.extract(iron, 1, Actionable.MODULATE, source);
+        if (extractedWhenEmpty != 0) {
+            return "输出槽为空却能抽出 " + extractedWhenEmpty;
+        }
+        return null;
+    }
+
+    /**
+     * long 语义的存储门面。
+     *
+     * <p>插入走 {@code getItemHandlerFor(side)}（受侧配置约束、且输出槽 {@code isItemValid=false}
+     * 天然拒绝）；取出只走**输出槽**，免得 AE2 把排队待加工的原料抽走。</p>
+     */
+    private static final class Ae2Storage implements MEStorage {
+
+        private final AppleMachineBlockEntity machine;
+        @Nullable
+        private final Direction side;
+
+        private Ae2Storage(AppleMachineBlockEntity machine, @Nullable Direction side) {
+            this.machine = machine;
+            this.side = side;
+        }
+
+        @Override
+        public long insert(AEKey what, long amount, Actionable mode, IActionSource source) {
+            if (!(what instanceof AEItemKey itemKey) || amount <= 0) {
+                return 0;
+            }
+            IItemHandler handler = machine.getItemHandlerFor(side);
+            int requested = (int) Math.min(amount, Integer.MAX_VALUE);
+            ItemStack leftover = ItemHandlerHelper.insertItemStacked(
+                    handler, itemKey.toStack(requested), mode.isSimulate());
+            return requested - leftover.getCount();
+        }
+
+        @Override
+        public long extract(AEKey what, long amount, Actionable mode, IActionSource source) {
+            if (amount <= 0) {
+                return 0;
+            }
+            IItemHandler handler = machine.getOutputHandlerFor(side);
+            long extracted = 0;
+            for (int slot = 0; slot < handler.getSlots() && extracted < amount; slot++) {
+                ItemStack current = handler.getStackInSlot(slot);
+                if (current.isEmpty() || !AEItemKey.of(current).equals(what)) {
+                    continue;
+                }
+                int want = (int) Math.min(amount - extracted, Integer.MAX_VALUE);
+                extracted += handler.extractItem(slot, want, mode.isSimulate()).getCount();
+            }
+            return extracted;
+        }
+
+        @Override
+        public void getAvailableStacks(KeyCounter out) {
+            IItemHandler handler = machine.getOutputHandlerFor(side);
+            for (int slot = 0; slot < handler.getSlots(); slot++) {
+                ItemStack stack = handler.getStackInSlot(slot);
+                if (!stack.isEmpty()) {
+                    out.add(AEItemKey.of(stack), stack.getCount());
+                }
+            }
+        }
+
+        @Override
+        public Component getDescription() {
+            return machine.getDisplayName();
+        }
     }
 
     /** 真正的实现。 */

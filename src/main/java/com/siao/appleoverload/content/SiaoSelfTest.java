@@ -220,10 +220,20 @@ public final class SiaoSelfTest {
         place(server, MachineKind.COMPRESSOR, pos);
         try {
             Class<?> integration = Class.forName("com.siao.appleoverload.compat.Ae2Integration");
+
             java.lang.reflect.Method verify = integration.getMethod("verify", Level.class, BlockPos.class);
-            Object failure = verify.invoke(null, server.overworld(), pos);
-            check("AE2：压缩机暴露了 ICraftingMachine 能力", failure == null, String.valueOf(failure));
-            SiaoMod.LOGGER.info("[SIAO-TEST] AE2-CHECK {}", failure == null ? "ok" : "failed");
+            Object craftingFailure = verify.invoke(null, server.overworld(), pos);
+            check("AE2：压缩机暴露了 ICraftingMachine 能力", craftingFailure == null,
+                    String.valueOf(craftingFailure));
+
+            java.lang.reflect.Method verifyStorage = integration.getMethod("verifyStorage",
+                    Level.class, BlockPos.class);
+            Object storageFailure = verifyStorage.invoke(null, server.overworld(), pos);
+            check("AE2：ME_STORAGE 的 SIMULATE 准确且不改状态", storageFailure == null,
+                    String.valueOf(storageFailure));
+
+            boolean ok = craftingFailure == null && storageFailure == null;
+            SiaoMod.LOGGER.info("[SIAO-TEST] AE2-CHECK {}", ok ? "ok" : "failed");
         } catch (ReflectiveOperationException e) {
             check("AE2：反射调用失败", false, e.toString());
             SiaoMod.LOGGER.error("[SIAO-TEST] AE2-CHECK failed");
@@ -439,9 +449,9 @@ public final class SiaoSelfTest {
                 !sameItem(purified, shard), describe(purified));
 
         // 离心机：混沌苹果 → 1 个奇点碎片
-        // 注意坐标：机器现在会主动把产物推给相邻 IItemHandler，
-        // 放在别的机器旁边产物会被推走，所以挪到 (9,206,0) 这种四周空旷的位置
-        AppleMachineBlockEntity chaos = place(server, MachineKind.CENTRIFUGE, new BlockPos(9, 206, 0));
+        // 注意坐标：机器会主动把产物推给相邻 IItemHandler，
+        // 必须放在四周空旷的位置，否则碎片会被隔壁机器接走
+        AppleMachineBlockEntity chaos = place(server, MachineKind.CENTRIFUGE, new BlockPos(9, 210, 0));
         chaos.getItemHandler().insertItem(0, new ItemStack(SiaoItems.chaosApple().get()), false);
         fillEnergy(chaos);
         for (int tick = 0; tick < 100; tick++) {

@@ -147,6 +147,20 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
     }
 
     /**
+     * 只含**输出槽**的视图，给 AE2 的 {@code ME_STORAGE} 用。
+     *
+     * <p>为什么不让 AE2 从完整物品栏里取：那样它能把排队待加工的原料抽走。
+     * 机器对外的「可取内容」只有产物。</p>
+     */
+    public IItemHandler getOutputHandlerFor(@Nullable Direction side) {
+        if (side != null && !sides[side.ordinal()].allowsExtract()) {
+            return MachineSideHandler.empty();
+        }
+        return new MachineSideHandler(inventory, machineKind.outputStart(),
+                machineKind.outputSlots(), false, true);
+    }
+
+    /**
      * AE2 整批推料：**全部放得下才放**，否则一点不动。
      *
      * <p>{@code ICraftingMachine#pushPattern} 的语义是「全有或全无」，
