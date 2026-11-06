@@ -176,6 +176,7 @@ public final class SiaoSelfTest {
         machineCases(server);
         sideConfigCases(server);
         batchCases(server);
+        orchardCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
@@ -204,6 +205,40 @@ public final class SiaoSelfTest {
         return total;
     }
 
+    private static int outputCount(AppleMachineBlockEntity machine) {
+        int total = 0;
+        int start = machine.machineKind().outputStart();
+        for (int slot = start; slot < start + machine.machineKind().outputSlots(); slot++) {
+            total += machine.getItemHandler().getStackInSlot(slot).getCount();
+        }
+        return total;
+    }
+
+    /** 苹果农场：树苗 → 苹果，整条压缩链的瓶颈。 */
+    private static void orchardCases(MinecraftServer server) {
+        AppleMachineBlockEntity orchard = place(server, MachineKind.ORCHARD, new BlockPos(12, 210, 0));
+        orchard.getItemHandler().insertItem(0, new ItemStack(Items.OAK_SAPLING), false);
+        fillEnergy(orchard);
+        for (int tick = 0; tick < 60 * 8; tick++) {
+            orchard.tick();
+        }
+        check("农场：一个树苗结出 8 个苹果",
+                outputCount(orchard) == 8, outputCount(orchard) + " 个");
+        check("农场：树苗被消耗",
+                orchard.getItemHandler().getStackInSlot(0).isEmpty(),
+                orchard.getItemHandler().getStackInSlot(0) + "");
+
+        for (int tick = 0; tick < 120; tick++) {
+            orchard.tick();
+        }
+        check("农场：没有树苗就不再产苹果",
+                outputCount(orchard) == 8, outputCount(orchard) + " 个");
+
+        AppleMachineBlockEntity noSeed = place(server, MachineKind.ORCHARD, new BlockPos(14, 210, 0));
+        check("农场：非树苗塞不进输入槽",
+                noSeed.getItemHandler().insertItem(0, new ItemStack(Items.IRON_INGOT), false).getCount() == 1,
+                "居然塞进去了");
+    }
     /**
      * AE2 专项：只有装了 AE2 才跑。
      *

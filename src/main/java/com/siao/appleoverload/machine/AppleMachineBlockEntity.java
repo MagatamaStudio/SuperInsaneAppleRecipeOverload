@@ -21,7 +21,9 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -61,6 +63,9 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
     public static final int DATA_SIDES = 4;
     public static final int DATA_COUNT = 5;
 
+    /** 一个树苗结几个苹果。 */
+    public static final int APPLES_PER_SAPLING = 8;
+
     private final MachineKind machineKind;
     private final MachineItemHandler inventory;
     private final MachineEnergyStorage energy;
@@ -72,6 +77,8 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
     private int progress;
     private int maxProgress = 1;
     private boolean chunkForced;
+    /** 农场用：当前这个树苗已经结了几个苹果。 */
+    private int saplingProgress;
 
     public AppleMachineBlockEntity(BlockPos pos, BlockState state) {
         super(SiaoMachineRegistry.MACHINE.get(), pos, state);
@@ -360,6 +367,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
             case COMPRESSOR -> runCompressor();
             case ENCHANTER -> runEnchanter();
             case CENTRIFUGE -> runCentrifuge();
+            case ORCHARD -> runOrchard();
         };
         if (processed) {
             energy.consume(cost);
@@ -422,6 +430,29 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
      *   <li><b>处理混沌苹果</b>：混沌苹果 → 1 个奇点碎片（奇点碎片只从阶段 6 的产物里来）</li>
      * </ol>
      */
+    /**
+     * 苹果农场：一个树苗结 {@value #APPLES_PER_SAPLING} 个苹果。
+     *
+     * <p>为什么要有树苗这个输入：如果只吃电就能凭空产苹果，那「苹果产量是唯一真瓶颈」
+     * 这句话就不成立了，整个九重目标会退化成「堆发电机」。用树苗当种子，
+     * 种植的规模才真正决定苹果产量 —— 这也和「农场解决不了，存储运输能解决」的判断一致。</p>
+     */
+    private boolean runOrchard() {
+        ItemStack seeds = inventory.getStackInSlot(0);
+        boolean needSeed = saplingProgress == 0;
+        if (needSeed && (seeds.isEmpty() || !seeds.is(ItemTags.SAPLINGS))) {
+            return false;
+        }
+        if (!insertOutput(new ItemStack(Items.APPLE, 1))) {
+            return false;
+        }
+        if (needSeed) {
+            seeds.shrink(1);
+        }
+        saplingProgress = (saplingProgress + 1) % APPLES_PER_SAPLING;
+        return true;
+    }
+
     private boolean runCentrifuge() {
         ItemStack input = inventory.getStackInSlot(0);
         if (input.isEmpty()) {
@@ -549,6 +580,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         tag.put("inventory", inventory.serializeNBT(registries));
         tag.put("energy", energy.serializeNBT(registries));
         tag.putInt("progress", progress);
+        tag.putInt("saplingProgress", saplingProgress);
         tag.putInt("sides", packedSides());
     }
 
@@ -558,6 +590,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         inventory.deserializeNBT(registries, tag.getCompound("inventory"));
         energy.deserializeNBT(registries, tag.get("energy"));
         progress = tag.getInt("progress");
+        saplingProgress = tag.getInt("saplingProgress");
         if (tag.contains("sides")) {
             unpackSides(tag.getInt("sides"));
         }
@@ -578,7 +611,13 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
             if (slot >= machineKind.outputStart()) {
                 return false;
             }
-            return machineKind.usesInputSlot(slot);
+            if (!machineKind.usesInputSlot(slot)) {
+                return false;
+            }
+            if (machineKind == MachineKind.ORCHARD) {
+                return stack.is(ItemTags.SAPLINGS);
+            }
+            return true;
         }
 
         @Override

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SIS",
+    "IHI",
+    "SIS"
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:oak_sapling"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "H": {
+      "item": "minecraft:hopper"
+    }
+  },
+  "result": {
+    "id": "siao:apple_orchard",
+    "count": 1
+  }
+}

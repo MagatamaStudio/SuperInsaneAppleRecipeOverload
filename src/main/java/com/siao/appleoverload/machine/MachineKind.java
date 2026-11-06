@@ -2,12 +2,14 @@ package com.siao.appleoverload.machine;
 
 import net.minecraft.util.StringRepresentable;
 
-/** 三台机器的静态参数。GUI 布局三台通用，所以这里只管数值和槽位语义。 */
+/** 四台机器的静态参数。GUI 布局四台通用，所以这里只管数值和槽位语义。 */
 public enum MachineKind implements StringRepresentable {
 
     COMPRESSOR("compressor", 9, 3, 40, 200),
     ENCHANTER("enchanter", 9, 3, 60, 500),
-    CENTRIFUGE("centrifuge", 9, 3, 80, 800);
+    CENTRIFUGE("centrifuge", 9, 3, 80, 800),
+    /** 苹果农场：吃树苗产苹果，是整个压缩链真正的瓶颈。 */
+    ORCHARD("orchard", 9, 3, 60, 300);
 
     /** 基础层升级槽数量。 */
     public static final int UPGRADE_SLOTS = 8;
@@ -71,11 +73,11 @@ public enum MachineKind implements StringRepresentable {
         return inputSlots + outputSlots + UPGRADE_SLOTS;
     }
 
-    /** 该机器是否把这个输入槽当料用（压缩机用满 9 格，另外两台只用第 0 格）。 */
+    /** 该机器是否把这个输入槽当料用（压缩机用满 9 格，其余三台只用第 0 格）。 */
     public boolean usesInputSlot(int slot) {
         return switch (this) {
             case COMPRESSOR -> true;
-            case ENCHANTER, CENTRIFUGE -> slot == 0;
+            case ENCHANTER, CENTRIFUGE, ORCHARD -> slot == 0;
         };
     }
 

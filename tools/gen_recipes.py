@@ -144,6 +144,10 @@ def main() -> None:
            ["III", "IHI", "III"],
            {"I": "minecraft:iron_ingot", "H": "minecraft:hopper"},
            f"{MOD_ID}:apple_centrifuge")
+    shaped("craft_apple_orchard",
+           ["SIS", "IHI", "SIS"],
+           {"S": "minecraft:oak_sapling", "I": "minecraft:iron_ingot", "H": "minecraft:hopper"},
+           f"{MOD_ID}:apple_orchard")
 
     shaped("craft_speed_upgrade", ["SSS", "SRS", "SSS"],
            {"S": "minecraft:sugar", "R": "minecraft:redstone"},
