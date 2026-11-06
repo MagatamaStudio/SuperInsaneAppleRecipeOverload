@@ -404,6 +404,20 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         }
     }
 
+    /**
+     * 单输入机器用：返回第一个非空的输入槽，都没有就返回 0。
+     *
+     * <p>9 个输入槽全部可用之后，玩家把东西放进第 5 格也得能加工 ——
+     * 之前所有机器硬编码读第 0 格，放别的格子就不工作。</p>
+     */
+    private int activeInputSlot() {
+        for (int slot = machineKind.inputStart(); slot < machineKind.outputStart(); slot++) {
+            if (!inventory.getStackInSlot(slot).isEmpty()) {
+                return slot;
+            }
+        }
+        return machineKind.inputStart();
+    }
     private boolean tryOperation() {
         if (machineKind == MachineKind.GENERATOR) {
             // 发电机是产电的，不做「有没有电」的前置检查
@@ -435,7 +449,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
      * 这就是原需求「这些物品不能手搓，必须用机器」的落地方式。</p>
      */
     private boolean runCompressor() {
-        ItemStack first = inventory.getStackInSlot(0);
+        ItemStack first = inventory.getStackInSlot(activeInputSlot());
         CraftingInput input = craftingInput();
         for (SiaoCompressionRecipe recipe : CompressionIndex.candidates(level.getRecipeManager(), first)) {
             if (!recipe.matches(input, level)) {
@@ -459,7 +473,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
 
     /** 给压缩单位挂附魔；已经附魔的则提升强度。 */
     private boolean runEnchanter() {
-        ItemStack input = inventory.getStackInSlot(0);
+        ItemStack input = inventory.getStackInSlot(activeInputSlot());
         if (input.isEmpty() || !(input.getItem() instanceof SiaoCompressedItem)) {
             return false;
         }
@@ -496,7 +510,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
      * 所以 {@code tryOperation} 里的能量检查天然通过，这里只负责**加**电。</p>
      */
     private boolean runGenerator() {
-        ItemStack fuel = inventory.getStackInSlot(0);
+        ItemStack fuel = inventory.getStackInSlot(activeInputSlot());
         if (fuel.isEmpty()) {
             return false;
         }
@@ -543,7 +557,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
      * 种植的规模才真正决定苹果产量 —— 这也和「农场解决不了，存储运输能解决」的判断一致。</p>
      */
     private boolean runOrchard() {
-        ItemStack seeds = inventory.getStackInSlot(0);
+        ItemStack seeds = inventory.getStackInSlot(activeInputSlot());
         boolean needSeed = saplingProgress == 0;
         if (needSeed && (seeds.isEmpty() || !seeds.is(ItemTags.SAPLINGS))) {
             return false;
@@ -559,7 +573,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
     }
 
     private boolean runCentrifuge() {
-        ItemStack input = inventory.getStackInSlot(0);
+        ItemStack input = inventory.getStackInSlot(activeInputSlot());
         if (input.isEmpty()) {
             return false;
         }

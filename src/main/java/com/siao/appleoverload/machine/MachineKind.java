@@ -76,11 +76,15 @@ public enum MachineKind implements StringRepresentable {
     }
 
     /** 该机器是否把这个输入槽当料用（压缩机用满 9 格，其余只用第 0 格）。 */
+    /**
+     * 输入槽是否可用。
+     *
+     * <p>五种机器的 9 个输入槽**全部可用** —— 单输入的机器会自己找第一个非空槽，
+     * 玩家/Alchemist 往哪格里塞都行。之前只有第 0 格可用，界面上却有 9 个槽，
+     * 看起来像坏了。</p>
+     */
     public boolean usesInputSlot(int slot) {
-        return switch (this) {
-            case COMPRESSOR -> true;
-            case ENCHANTER, CENTRIFUGE, ORCHARD, GENERATOR -> slot == 0;
-        };
+        return slot >= inputStart() && slot < inputStart() + inputSlots();
     }
 
     public int baseTicks() {

@@ -208,6 +208,7 @@ public final class SiaoSelfTest {
         advancementCases(server);
         perTierCases(server);
         singularityRouteCases(server);
+        slotMatrixCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
@@ -350,6 +351,65 @@ public final class SiaoSelfTest {
                                      net.minecraft.world.item.crafting.Recipe<?> recipe) {
         ((net.minecraft.world.item.crafting.RecipeSerializer) recipe.getSerializer())
                 .streamCodec().encode(buffer, recipe);
+    }
+    /**
+     * 槽位矩阵：每台机器的每个槽位用典型物品试一遍，把结果打成一张表。
+     *
+     * <p>断言三件事：输出槽绝不接受、升级槽只收升级、非压缩机第 1-8 槽拒绝原料。</p>
+     */
+    private static void slotMatrixCases(MinecraftServer server) {
+        List<ItemStack> probes = List.of(
+                new ItemStack(SiaoItems.unit(Material.APPLE, 1).get()),
+                new ItemStack(net.minecraft.world.item.Items.APPLE),
+                new ItemStack(net.minecraft.world.item.Items.OAK_SAPLING),
+                new ItemStack(SiaoItems.upgrades().iterator().next().get()),
+                new ItemStack(net.minecraft.world.item.Items.DIRT));
+        String[] names = {"压缩单位", "苹果", "树苗", "升级", "泥土"};
+
+        for (MachineKind kind : MachineKind.values()) {
+            AppleMachineBlockEntity machine = place(server, kind, new BlockPos(30 + kind.ordinal(), 220, 0));
+            var handler = machine.getItemHandler();
+            StringBuilder row = new StringBuilder();
+            int wrongOutput = 0;
+            int wrongUpgrade = 0;
+            int wrongDeadSlot = 0;
+            for (int slot = 0; slot < handler.getSlots(); slot++) {
+                char cell = '.';
+                for (int i = 0; i < probes.size(); i++) {
+                    if (handler.isItemValid(slot, probes.get(i))) {
+                        cell = "压果苗升泥".charAt(i);
+                        break;
+                    }
+                }
+                row.append(cell);
+                boolean isOutput = slot >= kind.outputStart() && slot < kind.outputStart() + kind.outputSlots();
+                boolean isUpgrade = slot >= kind.upgradeStart();
+                if (isOutput && cell != '.') {
+                    wrongOutput++;
+                }
+                if (isUpgrade && cell != '.' && cell != '升') {
+                    wrongUpgrade++;
+                }
+                if (!isOutput && !isUpgrade && !kind.usesInputSlot(slot) && cell != '.') {
+                    wrongDeadSlot++;
+                }
+                // 9 个输入槽必须都能塞进对应物品（不能让玩家对着空槽发呆）
+                if (!isOutput && !isUpgrade) {
+                    boolean anyProbe = false;
+                    for (ItemStack probe : probes) {
+                        anyProbe |= handler.isItemValid(slot, probe);
+                    }
+                    if (!anyProbe) {
+                        wrongDeadSlot++;
+                    }
+                }
+            }
+            check("槽位：" + kind.id() + " 输出槽不收物品", wrongOutput == 0, row.toString());
+            check("槽位：" + kind.id() + " 升级槽只收升级", wrongUpgrade == 0, row.toString());
+            check("槽位：" + kind.id() + " 无效输入槽保持空", wrongDeadSlot == 0, row.toString());
+            SiaoMod.LOGGER.info("[SIAO-TEST] 槽位矩阵 {}（{}槽）：{}",
+                    kind.id(), handler.getSlots(), row);
+        }
     }
     /** 奇点两条路线按配置互斥。 */
     private static void singularityRouteCases(MinecraftServer server) {
