@@ -204,6 +204,7 @@ public final class SiaoSelfTest {
         generatorCases(server);
         configuratorCases(server);
         oxidationCases(server);
+        recipeSyncCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
@@ -307,6 +308,42 @@ public final class SiaoSelfTest {
         return !path.matches(".*_(cut|polished|grate|chiseled|stairs|slab)(_waxed)?$");
     }
 
+    /**
+     * 回归：每条 siao 配方都必须能被序列化器编码进网络包。
+     *
+     * <p>之前混沌苹果用了 {@code StreamCodec.unit}，JSON 解析出来的实例和单例
+     * 不是同一个对象，同步配方时直接抛 IllegalStateException，
+     * 整个 update_recipes 包发不出去 —— 单人和多人都进不去世界。</p>
+     */
+    private static void recipeSyncCases(MinecraftServer server) {
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(
+                io.netty.buffer.Unpooled.buffer(), server.registryAccess());
+        int encoded = 0;
+        String failure = null;
+        for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
+            if (!SiaoMod.MOD_ID.equals(holder.id().getNamespace())) {
+                continue;
+            }
+            try {
+                encodeRecipe(buffer, holder.value());
+                encoded++;
+            } catch (Throwable throwable) {
+                if (failure == null) {
+                    failure = holder.id() + " -> " + throwable;
+                }
+            }
+        }
+        check("配方同步：全部 siao 配方都能编码进网络包（" + encoded + " 条）",
+                failure == null, failure);
+        buffer.release();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void encodeRecipe(net.minecraft.network.RegistryFriendlyByteBuf buffer,
+                                     net.minecraft.world.item.crafting.Recipe<?> recipe) {
+        ((net.minecraft.world.item.crafting.RecipeSerializer) recipe.getSerializer())
+                .streamCodec().encode(buffer, recipe);
+    }
     /** C 线：氧化链必须真的挂上（之前那 55 个铜变种根本没实现 WeatheringCopper）。 */
     private static void oxidationCases(MinecraftServer server) {
         var registry = server.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BLOCK);
