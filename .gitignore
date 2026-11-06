@@ -24,3 +24,6 @@ mc-assets/
 run/
 logs/
 src/generated/resources/.cache/
+
+# JEI 编译期依赖（插件编译需要，玩家侧可选）
+!gradle/offline-repo/jei/

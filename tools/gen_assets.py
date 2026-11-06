@@ -697,7 +697,8 @@ def main() -> None:
     zh_lang: dict[str, str] = {
         "itemGroup.siao.main": "超级疯狂的苹果配方超载",
         "tooltip.siao.equivalent": "相当于 %s 个%s",
-        "prefix.siao.enchanted": "附魔",
+        "jei.siao.compression": "压缩（机器）",
+    "prefix.siao.enchanted": "附魔",
         "side.siao.both": "双向",
         "side.siao.input": "仅输入",
         "side.siao.output": "仅输出",

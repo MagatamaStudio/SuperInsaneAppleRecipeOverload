@@ -51,6 +51,8 @@ repositories {
 dependencies {
     // AE2 只用到 appeng.api.*，api jar 足够；compileOnly 保证服务器/客户端没装 AE2 也能跑
     compileOnly "org.appliedenergistics:appliedenergistics2:19.2.18:api"
+    // JEI 只在开发期编译插件用；玩家侧是可选的，没装 JEI 时插件类不会被加载
+    compileOnly files("gradle/offline-repo/jei/jei-1.21.1-neoforge-19.8.4.113.jar")
 }
 
 tasks.withType(ProcessResources).configureEach {
