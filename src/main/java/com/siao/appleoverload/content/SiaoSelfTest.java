@@ -205,6 +205,7 @@ public final class SiaoSelfTest {
         configuratorCases(server);
         oxidationCases(server);
         recipeSyncCases(server);
+        advancementCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
@@ -343,6 +344,23 @@ public final class SiaoSelfTest {
                                      net.minecraft.world.item.crafting.Recipe<?> recipe) {
         ((net.minecraft.world.item.crafting.RecipeSerializer) recipe.getSerializer())
                 .streamCodec().encode(buffer, recipe);
+    }
+    /** 进度与物品标签。 */
+    private static void advancementCases(MinecraftServer server) {
+        int loaded = 0;
+        for (String id : new String[]{"root", "first_compress", "tier3", "tier9", "machine", "enchant", "singularity"}) {
+            if (server.getAdvancements().get(net.minecraft.resources.ResourceLocation.parse("siao:" + id)) != null) {
+                loaded++;
+            }
+        }
+        check("进度：7 个进度全部装载", loaded == 7, loaded + " 个");
+
+        var itemTags = server.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ITEM);
+        var units = itemTags.getTag(net.minecraft.tags.TagKey.create(
+                net.minecraft.core.registries.Registries.ITEM,
+                net.minecraft.resources.ResourceLocation.parse("siao:compressed_units")));
+        check("标签：压缩单位标签非空", units.isPresent() && units.get().size() > 100,
+                units.map(tag -> tag.size() + " 项").orElse("标签不存在"));
     }
     /** C 线：氧化链必须真的挂上（之前那 55 个铜变种根本没实现 WeatheringCopper）。 */
     private static void oxidationCases(MinecraftServer server) {

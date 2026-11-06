@@ -1065,6 +1065,77 @@ def main() -> None:
         payload = stairs_loot(block_id) if kind == "stairs" else slab_loot(block_id)
         write_json(loot_dir / f"{block_id}.json", payload)
 
+    # ---- 进度（成就）----------------------------------------------------------
+    adv_dir = ROOT / "src" / "main" / "resources" / "data" / "siao" / "advancement"
+    adv_dir.mkdir(parents=True, exist_ok=True)
+
+    def advancement(adv_id, icon, title_zh, title_en, desc_zh, desc_en,
+                    trigger_item=None, parent=None, frame="task", background=None):
+        display = {
+            "icon": {"id": icon},
+            "title": {"translate": f"advancement.{MOD_ID}.{adv_id}.title"},
+            "description": {"translate": f"advancement.{MOD_ID}.{adv_id}.description"},
+            "frame": frame,
+            "show_toast": True,
+            "announce_to_chat": True,
+        }
+        if background:
+            display["background"] = background
+        if parent:
+            display["parent"] = f"{MOD_ID}:{parent}"
+        criteria = {
+            "got": {
+                "trigger": "minecraft:inventory_changed",
+                "conditions": {"items": [{"items": trigger_item or icon}]},
+            }
+        }
+        write_json(adv_dir / f"{adv_id}.json", {"display": display, "criteria": criteria})
+        zh_lang[f"advancement.{MOD_ID}.{adv_id}.title"] = title_zh
+        zh_lang[f"advancement.{MOD_ID}.{adv_id}.description"] = desc_zh
+        en_lang[f"advancement.{MOD_ID}.{adv_id}.title"] = title_en
+        en_lang[f"advancement.{MOD_ID}.{adv_id}.description"] = desc_en
+
+    advancement("root", f"{MOD_ID}:compressed_1x_apple",
+                "超级疯狂的苹果配方超载", "Super Insane Apple Recipe Overload",
+                "把九个苹果压成一个", "Compress nine apples into one",
+                parent=None, background="minecraft:textures/gui/advancements/backgrounds/stone.png")
+    advancement("first_compress", f"{MOD_ID}:compressed_1x_apple",
+                "一重压缩", "First Compression",
+                "造一台苹果压缩机，压出第一个一重压缩苹果锭", "Build a compressor and press your first 1x unit",
+                parent="root")
+    advancement("tier3", f"{MOD_ID}:compressed_3x_apple",
+                "三重压缩", "Triple Compression",
+                "压到三重——729 个苹果", "Reach tier 3 — 729 apples",
+                parent="first_compress")
+    advancement("tier9", f"{MOD_ID}:compressed_9x_apple",
+                "九重压缩", "Ninefold Compression",
+                "压到九重——387,420,489 个苹果", "Reach tier 9 — 387,420,489 apples",
+                parent="tier3", frame="challenge")
+    advancement("machine", f"{MOD_ID}:apple_compressor",
+                "产线开工", "Industry",
+                "造出第一台机器", "Build your first machine",
+                parent="root")
+    advancement("enchant", f"{MOD_ID}:compressed_1x_apple",
+                "附魔压缩", "Enchanted Compression",
+                "给压缩单位挂上附魔", "Enchant a compressed unit",
+                parent="first_compress")
+    advancement("singularity", f"{MOD_ID}:singularity",
+                "绝对苹果奇点", "Absolute Apple Singularity",
+                "用九重压缩苹果锭合成奇点", "Craft a singularity from a 9x unit",
+                parent="tier9", frame="challenge")
+
+    # ---- 物品标签（给进度和以后的其他模组用）---------------------------------
+    tag_dir = ROOT / "src" / "main" / "resources" / "data" / "siao" / "tags" / "item"
+    tag_dir.mkdir(parents=True, exist_ok=True)
+    unit_items = sorted(f"{MOD_ID}:{i}" for i in
+                        (p.stem for p in (ROOT / "src/main/resources/assets/siao/models/item").glob("*.json"))
+                        if i.startswith("compressed_") and not i.endswith("_block")
+                        and not any(i.endswith(f"_{s}") or i.endswith(f"_{s}_waxed") for s in
+                                    ("cut", "polished", "grate", "chiseled", "stairs", "slab")))
+    block_items = sorted(f"{MOD_ID}:{b}" for b in
+                         (p.stem for p in (ROOT / "src/main/resources/assets/siao/blockstates").glob("*.json")))
+    write_json(tag_dir / "compressed_units.json", {"replace": False, "values": unit_items})
+    write_json(tag_dir / "compressed_blocks.json", {"replace": False, "values": block_items})
     # ---- 方块标签：从实际生成的 blockstate 反推，保证一个不漏 ------------------
     # C/D 线现在有一万多个方块，靠手工收集 block_ids 一定会漏
     tags_dir2 = ROOT / "src" / "main" / "resources" / "data" / "minecraft" / "tags" / "block" / "mineable"

@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "id": "siao:apple_compressor"
+    },
+    "title": {
+      "translate": "advancement.siao.machine.title"
+    },
+    "description": {
+      "translate": "advancement.siao.machine.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "parent": "siao:root"
+  },
+  "criteria": {
+    "got": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "siao:apple_compressor"
+          }
+        ]
+      }
+    }
+  }
+}

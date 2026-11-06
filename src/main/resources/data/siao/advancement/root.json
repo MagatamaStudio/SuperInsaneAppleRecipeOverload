@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "id": "siao:compressed_1x_apple"
+    },
+    "title": {
+      "translate": "advancement.siao.root.title"
+    },
+    "description": {
+      "translate": "advancement.siao.root.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "background": "minecraft:textures/gui/advancements/backgrounds/stone.png"
+  },
+  "criteria": {
+    "got": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "siao:compressed_1x_apple"
+          }
+        ]
+      }
+    }
+  }
+}

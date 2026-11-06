@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "id": "siao:compressed_9x_apple"
+    },
+    "title": {
+      "translate": "advancement.siao.tier9.title"
+    },
+    "description": {
+      "translate": "advancement.siao.tier9.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "parent": "siao:tier3"
+  },
+  "criteria": {
+    "got": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "siao:compressed_9x_apple"
+          }
+        ]
+      }
+    }
+  }
+}

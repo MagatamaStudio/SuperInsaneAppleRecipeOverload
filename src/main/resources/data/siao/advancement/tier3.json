@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "id": "siao:compressed_3x_apple"
+    },
+    "title": {
+      "translate": "advancement.siao.tier3.title"
+    },
+    "description": {
+      "translate": "advancement.siao.tier3.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "parent": "siao:first_compress"
+  },
+  "criteria": {
+    "got": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "siao:compressed_3x_apple"
+          }
+        ]
+      }
+    }
+  }
+}

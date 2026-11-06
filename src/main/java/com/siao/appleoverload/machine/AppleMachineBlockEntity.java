@@ -319,6 +319,12 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         }
         if (operations > 0) {
             setChanged();
+            // 加工时给一点声音反馈。每 2 秒最多一次，避免连续加工时吵成一团
+            if (level.getGameTime() % 40L == 0L) {
+                level.playSound(null, worldPosition,
+                        net.minecraft.sounds.SoundEvents.ANVIL_LAND,
+                        net.minecraft.sounds.SoundSource.BLOCKS, 0.25F, 1.6F);
+            }
         }
         autoOutput();
         pushEnergyOut();

@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "id": "siao:singularity"
+    },
+    "title": {
+      "translate": "advancement.siao.singularity.title"
+    },
+    "description": {
+      "translate": "advancement.siao.singularity.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "parent": "siao:tier9"
+  },
+  "criteria": {
+    "got": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "siao:singularity"
+          }
+        ]
+      }
+    }
+  }
+}
