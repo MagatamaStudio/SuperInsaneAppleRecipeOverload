@@ -1,6 +1,7 @@
 package com.siao.appleoverload.machine;
 
 import com.mojang.serialization.MapCodec;
+import com.siao.appleoverload.content.SiaoConfiguratorItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -58,6 +59,14 @@ public class AppleMachineBlock extends BaseEntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
                                                BlockHitResult hitResult) {
+        // ⚠️ vanilla 的调用顺序是：
+        //    block.useItemOn -> block.useWithoutItem -> itemStack.useOn
+        // 我们这里一旦 consume，物品的 useOn 就永远轮不到了。
+        // 所以手上拿着配置器时必须让位，否则「右键配置面」会被开界面截胡。
+        if (player.getMainHandItem().getItem() instanceof SiaoConfiguratorItem
+                || player.getOffhandItem().getItem() instanceof SiaoConfiguratorItem) {
+            return InteractionResult.PASS;
+        }
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof AppleMachineBlockEntity machine) {
             player.openMenu(machine, pos);
         }

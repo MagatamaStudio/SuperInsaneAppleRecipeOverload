@@ -201,6 +201,21 @@ public final class SiaoSelfTest {
         check("配置器：其他面不受影响",
                 machine.sideMode(Direction.SOUTH) == SideMode.BOTH, machine.sideMode(Direction.SOUTH).name());
 
+        // 回归：vanilla 的调用顺序是 block.useItemOn -> block.useWithoutItem -> item.useOn，
+        // 机器若在 useWithoutItem 里 consume（开界面），配置器就永远轮不到。
+        net.neoforged.neoforge.common.util.FakePlayer fake =
+                net.neoforged.neoforge.common.util.FakePlayerFactory.getMinecraft(server.overworld());
+        fake.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
+                new ItemStack(SiaoItems.configurator().get()));
+        var hit = new net.minecraft.world.phys.BlockHitResult(
+                net.minecraft.world.phys.Vec3.atCenterOf(machine.getBlockPos()),
+                Direction.UP, machine.getBlockPos(), false);
+        net.minecraft.world.InteractionResult blockResult =
+                server.overworld().getBlockState(machine.getBlockPos())
+                        .useWithoutItem(server.overworld(), fake, hit);
+        check("配置器：机器不会抢走配置器的右键交互",
+                blockResult == net.minecraft.world.InteractionResult.PASS, blockResult.toString());
+
         // 发电机把电推给相邻机器
         AppleMachineBlockEntity generator = place(server, MachineKind.GENERATOR, new BlockPos(24, 210, 0));
         AppleMachineBlockEntity consumer = place(server, MachineKind.COMPRESSOR, new BlockPos(25, 210, 0));

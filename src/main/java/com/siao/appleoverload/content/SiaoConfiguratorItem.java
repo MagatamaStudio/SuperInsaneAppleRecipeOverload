@@ -31,9 +31,17 @@ public class SiaoConfiguratorItem extends Item {
             return InteractionResult.PASS;
         }
         Player player = context.getPlayer();
-        // 潜行时让给方块本身（打开机器界面）
-        if (player != null && player.isShiftKeyDown()) {
+        if (player == null) {
             return InteractionResult.PASS;
+        }
+        // 潜行时打开界面（和 Mek 一致）。注意潜行时 vanilla 会跳过
+        // block.useWithoutItem，所以这里必须自己处理
+        if (player.isShiftKeyDown()) {
+            if (level.isClientSide) {
+                return InteractionResult.SUCCESS;
+            }
+            player.openMenu(machine, context.getClickedPos());
+            return InteractionResult.CONSUME;
         }
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
