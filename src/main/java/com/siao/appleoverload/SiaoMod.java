@@ -11,6 +11,7 @@ import com.siao.appleoverload.machine.MachineKind;
 import com.siao.appleoverload.machine.SiaoMachineRegistry;
 import com.siao.appleoverload.client.SiaoClientEvents;
 import com.siao.appleoverload.config.SiaoConfig;
+import com.siao.appleoverload.recipe.SiaoRecipeTypes;
 import com.siao.appleoverload.recipe.SiaoRecipes;
 import com.siao.appleoverload.upgrade.SiaoUpgrades;
 import net.neoforged.api.distmarker.Dist;
@@ -42,6 +43,7 @@ public final class SiaoMod {
 
         SiaoComponents.DATA_COMPONENTS.register(modBus);
         SiaoRecipes.SERIALIZERS.register(modBus);
+        SiaoRecipeTypes.TYPES.register(modBus);
         SiaoMachineRegistry.BLOCK_ENTITIES.register(modBus);
         SiaoMachineRegistry.MENUS.register(modBus);
 

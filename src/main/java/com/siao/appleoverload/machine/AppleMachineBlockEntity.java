@@ -422,25 +422,33 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
 
     // ---- 三台机器的加工逻辑 -------------------------------------------------
 
-    /** 9 个同种物品 → 1 个上一重。附魔穿透交给配方自己判，机器不重复实现。 */
+    /**
+     * 压缩 / 拆分 / 装块 / 拆块都由这台机器做。
+     *
+     * <p>配方现在属于自定义类型 {@code siao:compression}，<b>工作台看不到</b> ——
+     * 这就是原需求「这些物品不能手搓，必须用机器」的落地方式。</p>
+     */
     private boolean runCompressor() {
         ItemStack first = inventory.getStackInSlot(0);
-        SiaoCompressionRecipe recipe = CompressionIndex.find(level.getRecipeManager(), first);
-        if (recipe == null) {
-            return false;
-        }
         CraftingInput input = craftingInput();
-        if (!recipe.matches(input, level)) {
-            return false;
+        for (SiaoCompressionRecipe recipe : CompressionIndex.candidates(level.getRecipeManager(), first)) {
+            if (!recipe.matches(input, level)) {
+                continue;
+            }
+            ItemStack output = recipe.assemble(input, level.registryAccess());
+            if (!insertOutput(output)) {
+                return false;
+            }
+            int consumed = 0;
+            for (int slot = 0; slot < MachineKind.COMPRESSOR.inputSlots() && consumed < recipe.count(); slot++) {
+                if (!inventory.getStackInSlot(slot).isEmpty()) {
+                    inventory.extractItem(slot, 1, false);
+                    consumed++;
+                }
+            }
+            return true;
         }
-        ItemStack output = recipe.assemble(input, level.registryAccess());
-        if (!insertOutput(output)) {
-            return false;
-        }
-        for (int slot = 0; slot < MachineKind.COMPRESSOR.inputSlots(); slot++) {
-            inventory.extractItem(slot, 1, false);
-        }
-        return true;
+        return false;
     }
 
     /** 给压缩单位挂附魔；已经附魔的则提升强度。 */

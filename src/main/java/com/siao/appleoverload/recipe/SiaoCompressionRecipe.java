@@ -16,7 +16,8 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
-import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
@@ -57,7 +58,7 @@ public record SiaoCompressionRecipe(
         Ingredient ingredient,
         ItemStack result,
         int count,
-        EnchantMode enchantMode) implements CraftingRecipe {
+        EnchantMode enchantMode) implements Recipe<CraftingInput> {
 
     /** 合成格最多 9 格，输入数量上限。 */
     public static final int MAX_COUNT = 9;
@@ -77,6 +78,15 @@ public record SiaoCompressionRecipe(
     @Override
     public RecipeSerializer<?> getSerializer() {
         return SiaoRecipes.COMPRESSION.get();
+    }
+
+    /**
+     * ⚠️ 返回的是**自定义**配方类型，不是 {@code RecipeType.CRAFTING}。
+     * 这一行就是「不能手搓」的全部实现：工作台只查 CRAFTING 类型，永远看不到这些配方。
+     */
+    @Override
+    public RecipeType<?> getType() {
+        return SiaoRecipeTypes.COMPRESSION.get();
     }
 
     @Override

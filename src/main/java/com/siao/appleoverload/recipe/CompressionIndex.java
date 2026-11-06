@@ -5,58 +5,60 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * 「输入物品 → 压缩配方」索引，压缩机用。
  *
- * <p>直接用 {@code RecipeManager#getRecipeFor} 每次要过 540 条配方的
- * {@code matches()}（≈4900 次物品比较）。满配机器一 tick 跑十几次，
- * 再乘上几十台，服务端就废了。这里按 {@link RecipeManager} 身份缓存一张
- * {@code Item → 配方} 表，查表 O(1)，再用单条 {@code matches()} 做最终校验
- * （附魔状态、数量这些仍然走配方自己的逻辑，不重复实现）。</p>
+ * <p>直接用 {@code RecipeManager#getRecipeFor} 每次要过 500 多条配方的
+ * {@code matches()}。满配机器一 tick 跑十几次，再乘上几十台，服务端就废了。
+ * 这里按 {@link RecipeManager} 身份缓存一张 {@code Item → 配方列表} 表，
+ * 查表之后只用对少数几条跑 {@code matches()}。</p>
+ *
+ * <p>压缩 / 拆分 / 装块 / 拆块**四类都在同一张表里** —— 它们现在都是
+ * {@code siao:compression} 类型，由压缩机统一处理。</p>
  */
 public final class CompressionIndex {
 
     private static RecipeManager cachedManager;
-    private static Map<Item, SiaoCompressionRecipe> byItem = Map.of();
+    private static Map<Item, List<SiaoCompressionRecipe>> byItem = Map.of();
 
     private CompressionIndex() {
     }
 
-    /** 找出能把 {@code stack} 压上去的配方；没有则 null。 */
-    public static SiaoCompressionRecipe find(RecipeManager manager, ItemStack stack) {
+    /** 能处理这个物品的候选配方（可能为空）。 */
+    public static List<SiaoCompressionRecipe> candidates(RecipeManager manager, ItemStack stack) {
         if (stack.isEmpty()) {
-            return null;
+            return List.of();
         }
         if (manager != cachedManager) {
             rebuild(manager);
         }
-        return byItem.get(stack.getItem());
+        return byItem.getOrDefault(stack.getItem(), List.of());
     }
 
-    private static void rebuild(RecipeManager manager) {
-        Map<Item, SiaoCompressionRecipe> index = new HashMap<>();
-        for (RecipeHolder<?> holder : manager.getRecipes()) {
-            if (holder.value() instanceof SiaoCompressionRecipe recipe
-                    && recipe.count() == 9
-                    && recipe.enchantMode() == SiaoCompressionRecipe.EnchantMode.PRESERVE
-                    && recipe.result().getCount() == 1) {
-                for (ItemStack candidate : recipe.ingredient().getItems()) {
-                    index.putIfAbsent(candidate.getItem(), recipe);
-                }
-            }
-        }
-        byItem = index;
-        cachedManager = manager;
-    }
-
-    /** 供自检用：索引里有多少条可压缩输入。 */
+    /** 供自检用：索引里有多少种可识别输入。 */
     public static int size(RecipeManager manager) {
         if (manager != cachedManager) {
             rebuild(manager);
         }
         return byItem.size();
+    }
+
+    private static void rebuild(RecipeManager manager) {
+        Map<Item, List<SiaoCompressionRecipe>> index = new HashMap<>();
+        for (RecipeHolder<?> holder : manager.getRecipes()) {
+            if (!(holder.value() instanceof SiaoCompressionRecipe recipe)) {
+                continue;
+            }
+            for (ItemStack candidate : recipe.ingredient().getItems()) {
+                index.computeIfAbsent(candidate.getItem(), key -> new ArrayList<>()).add(recipe);
+            }
+        }
+        byItem = index;
+        cachedManager = manager;
     }
 }

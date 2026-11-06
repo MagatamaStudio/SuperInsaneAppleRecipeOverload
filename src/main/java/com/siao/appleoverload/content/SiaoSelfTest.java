@@ -19,6 +19,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
@@ -272,6 +273,18 @@ public final class SiaoSelfTest {
             return null;
         }
         return CraftingInput.of(width, height, slots);
+    }
+
+    /** 判断一个 id 是不是压缩链上的东西（压缩单位 / 压缩块），而不是铜形状装饰块。 */
+    private static boolean isCompressionChainItem(net.minecraft.resources.ResourceLocation id) {
+        if (!SiaoMod.MOD_ID.equals(id.getNamespace())) {
+            return false;
+        }
+        String path = id.getPath();
+        if (!path.startsWith("compressed_")) {
+            return false;
+        }
+        return !path.matches(".*_(cut|polished|grate|chiseled|stairs|slab)(_waxed)?$");
     }
 
     /** 配置器（Mek 式）与发电机推送。 */
@@ -623,9 +636,23 @@ public final class SiaoSelfTest {
         ItemStack unit2 = new ItemStack(SiaoItems.unit(Material.IRON, 2).get());
         ItemStack shard = new ItemStack(SiaoItems.singularityShard().get());
 
-        check("压缩索引覆盖 135 种可压缩输入",
-                CompressionIndex.size(server.getRecipeManager()) == 135,
+        // 285 = 15 个原版输入 + 135 个压缩单位 + 135 个压缩块
+        // （压缩/拆分/装块/拆块四类配方现在都在同一张索引里）
+        check("压缩索引覆盖 285 种输入",
+                CompressionIndex.size(server.getRecipeManager()) == 285,
                 CompressionIndex.size(server.getRecipeManager()) + " 种");
+
+        // ★ L12 科技树绑定：压缩链（单位 ↔ 单位、单位 ↔ 块）的东西不能在工作台合成。
+        //   铜的形状变种是装饰线，按原版习惯仍然可以手搓，所以排除在外。
+        long craftableByHand = server.getRecipeManager().getRecipes().stream()
+                .filter(holder -> SiaoMod.MOD_ID.equals(holder.id().getNamespace()))
+                .filter(holder -> holder.value().getType() == RecipeType.CRAFTING)
+                .filter(holder -> isCompressionChainItem(
+                        net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(
+                                holder.value().getResultItem(server.registryAccess()).getItem())))
+                .count();
+        check("科技树绑定：压缩链产物不能手搓",
+                craftableByHand == 0, craftableByHand + " 条仍可在工作台合成");
 
         // 压缩机：40 tick 一次，200 FE
         AppleMachineBlockEntity compressor = place(server, MachineKind.COMPRESSOR, new BlockPos(0, 200, 0));
