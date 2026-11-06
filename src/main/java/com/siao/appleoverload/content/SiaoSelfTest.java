@@ -179,10 +179,36 @@ public final class SiaoSelfTest {
         batchCases(server);
         orchardCases(server);
         generatorCases(server);
+        configuratorCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
         configCases(server);
+    }
+
+    /** 配置器（Mek 式）与发电机推送。 */
+    private static void configuratorCases(MinecraftServer server) {
+        AppleMachineBlockEntity machine = place(server, MachineKind.COMPRESSOR, new BlockPos(22, 210, 0));
+        check("配置器：右键哪个面就切哪个面",
+                machine.cycleSide(Direction.NORTH) == SideMode.INPUT
+                        && machine.sideMode(Direction.NORTH) == SideMode.INPUT,
+                machine.sideMode(Direction.NORTH).name());
+        check("配置器：连切三次回到双向",
+                machine.cycleSide(Direction.NORTH) == SideMode.OUTPUT
+                        && machine.cycleSide(Direction.NORTH) == SideMode.NONE
+                        && machine.cycleSide(Direction.NORTH) == SideMode.BOTH,
+                machine.sideMode(Direction.NORTH).name());
+        check("配置器：其他面不受影响",
+                machine.sideMode(Direction.SOUTH) == SideMode.BOTH, machine.sideMode(Direction.SOUTH).name());
+
+        // 发电机把电推给相邻机器
+        AppleMachineBlockEntity generator = place(server, MachineKind.GENERATOR, new BlockPos(24, 210, 0));
+        AppleMachineBlockEntity consumer = place(server, MachineKind.COMPRESSOR, new BlockPos(25, 210, 0));
+        generator.getItemHandler().insertItem(0, new ItemStack(Items.APPLE, 8), false);
+        for (int tick = 0; tick < 200; tick++) {
+            generator.tick();
+        }
+        check("发电机：电力推给相邻机器", consumer.energyStored() > 0, consumer.energyStored() + " FE");
     }
 
     /** 苹果发电机：烧苹果换 FE，整个模组唯一的电源。 */

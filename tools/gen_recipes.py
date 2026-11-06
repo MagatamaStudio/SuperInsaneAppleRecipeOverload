@@ -152,6 +152,10 @@ def main() -> None:
            ["IRI", "RFR", "IRI"],
            {"I": "minecraft:iron_ingot", "R": "minecraft:redstone", "F": "minecraft:furnace"},
            f"{MOD_ID}:apple_generator")
+    shaped("craft_configurator",
+           ["I I", " R ", "I I"],
+           {"I": "minecraft:iron_ingot", "R": "minecraft:redstone"},
+           f"{MOD_ID}:configurator")
 
     shaped("craft_speed_upgrade", ["SSS", "SRS", "SSS"],
            {"S": "minecraft:sugar", "R": "minecraft:redstone"},

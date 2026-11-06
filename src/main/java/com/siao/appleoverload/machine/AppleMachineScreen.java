@@ -2,18 +2,20 @@ package com.siao.appleoverload.machine;
 
 import com.siao.appleoverload.SiaoMod;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * 三台机器共用的界面。
+ * 四台机器共用的界面。
  *
  * <p>能量条和进度条用 {@link GuiGraphics#fill} 直接画色块，
  * 不走贴图精灵 —— 少一处 UV 对不齐的坑，也少两张图。</p>
+ *
+ * <p>接口配置**不在界面里**：用苹果配置器右键机器的某个面（Mek 式）。
+ * 界面上原本那个「切你站的这面」的按钮已经去掉了 —— 反馈太弱、
+ * 而且改哪个面取决于站位，容易把人绕晕。</p>
  */
 public class AppleMachineScreen extends AbstractContainerScreen<AppleMachineMenu> {
 
@@ -23,9 +25,6 @@ public class AppleMachineScreen extends AbstractContainerScreen<AppleMachineMenu
     private static final int ENERGY_COLOR = 0xFF3FBF5F;
     private static final int PROGRESS_COLOR = 0xFFFFC64B;
     private static final int BAR_TRACK = 0xFF2A2A2A;
-
-    private Button sideButton;
-    private SideMode lastShownMode;
 
     public AppleMachineScreen(AppleMachineMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -39,40 +38,9 @@ public class AppleMachineScreen extends AbstractContainerScreen<AppleMachineMenu
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        syncSideButton();
         renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
-    }
-
-    @Override
-    protected void init() {
-        super.init();
-        sideButton = Button.builder(Component.empty(), button -> {
-                    if (minecraft != null && minecraft.gameMode != null) {
-                        minecraft.gameMode.handleInventoryButtonClick(
-                                menu.containerId, AppleMachineMenu.BUTTON_CYCLE_SIDE);
-                    }
-                })
-                .bounds(leftPos + 150, topPos + 3, 22, 18)
-                .tooltip(Tooltip.create(Component.translatable("tooltip.siao.side_button")))
-                .build();
-        addRenderableWidget(sideButton);
-    }
-
-    /** 按钮上只放一个字：双 / 入 / 出 / 关。 */
-    private void syncSideButton() {
-        if (sideButton == null || minecraft == null || minecraft.player == null) {
-            return;
-        }
-        SideMode mode = menu.sideMode(minecraft.player);
-        if (mode != lastShownMode) {
-            lastShownMode = mode;
-            SiaoMod.LOGGER.info("[SIAO-DEBUG] client side -> {} (face={})",
-                    mode.name(), menu.facingSide(minecraft.player));
-        }
-        String zh = mode.zh();
-        sideButton.setMessage(Component.literal(zh.substring(0, 1)));
     }
 
     @Override
@@ -82,10 +50,8 @@ public class AppleMachineScreen extends AbstractContainerScreen<AppleMachineMenu
         graphics.blit(BACKGROUND, x, y, 0, 0, imageWidth, imageHeight);
 
         // 能量条（自下而上）
-        int energyX = x + MachineLayout.ENERGY_X;
-        int energyY = y + MachineLayout.ENERGY_Y;
-        int barX = energyX + 1;
-        int barY = energyY + 1;
+        int barX = x + MachineLayout.ENERGY_X + 1;
+        int barY = y + MachineLayout.ENERGY_Y + 1;
         int barWidth = MachineLayout.ENERGY_WIDTH - 2;
         int barHeight = MachineLayout.ENERGY_HEIGHT - 2;
         graphics.fill(barX, barY, barX + barWidth, barY + barHeight, BAR_TRACK);

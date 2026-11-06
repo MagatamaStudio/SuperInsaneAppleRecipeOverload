@@ -421,6 +421,31 @@ def make_shard_texture() -> Image.Image:
     return img
 
 
+
+def make_configurator_texture() -> Image.Image:
+    """配置器：一把扳手轮廓 + 红色握柄。"""
+    size = ITEM_SIZE
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    steel = (206, 212, 220, 255)
+    dark = (96, 104, 116, 255)
+    handle = (196, 84, 68, 255)
+    width = max(6, size // 12)
+
+    draw.line([(int(size * 0.30), int(size * 0.74)), (int(size * 0.66), int(size * 0.30))],
+              fill=dark, width=width + 4)
+    draw.line([(int(size * 0.30), int(size * 0.74)), (int(size * 0.66), int(size * 0.30))],
+              fill=steel, width=width)
+    draw.ellipse([int(size * 0.22), int(size * 0.66), int(size * 0.40), int(size * 0.84)],
+                 fill=handle, outline=dark, width=max(2, size // 48))
+    cx, cy = int(size * 0.70), int(size * 0.24)
+    radius = int(size * 0.16)
+    draw.ellipse([cx - radius, cy - radius, cx + radius, cy + radius],
+                 outline=steel, width=max(4, size // 20))
+    draw.rectangle([cx - radius // 2, cy - radius - 2, cx + radius // 2, cy - radius + 3],
+                   fill=(0, 0, 0, 0))
+    return img
+
 def make_singularity_texture() -> Image.Image:
     """绝对苹果奇点：事件视界 + 紫色吸积盘。"""
     size = ITEM_SIZE
@@ -738,6 +763,7 @@ def main() -> None:
 
     # ---- 奇点碎片 / 奇点 / 混沌苹果 -----------------------------------------
     specials = [
+        ("configurator", "苹果配置器", "Apple Configurator", make_configurator_texture),
         ("singularity_shard", "奇点碎片", "Singularity Shard", make_shard_texture),
         ("singularity", "绝对苹果奇点", "Absolute Apple Singularity", make_singularity_texture),
         ("chaos_apple", "混沌苹果", "Chaos Apple", make_chaos_apple_texture),

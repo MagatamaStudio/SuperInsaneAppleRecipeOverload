@@ -25,6 +25,7 @@ public final class SiaoCreativeTabs {
                         SiaoBlocks.copperVariants().forEach(block -> output.accept(block.get().asItem()));
                         SiaoBlocks.machineBlocks().forEach(block -> output.accept(block.get()));
                         SiaoItems.upgrades().forEach(item -> output.accept(item.get()));
+                        output.accept(SiaoItems.configurator().get());
                         output.accept(SiaoItems.singularityShard().get());
                         output.accept(SiaoItems.singularity().get());
                         output.accept(SiaoItems.chaosApple().get());

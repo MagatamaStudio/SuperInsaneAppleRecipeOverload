@@ -210,20 +210,25 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
     }
 
     /**
+     * 切某个面的通行规则，返回新值。
+     *
+     * <p>由配置器右键（指定面）/ 界面按钮（玩家所站的面）共同调用。</p>
+     */
+    public SideMode cycleSide(Direction face) {
+        SideMode next = sides[face.ordinal()].next();
+        sides[face.ordinal()] = next;
+        setChanged();
+        return next;
+    }
+
+    /**
      * 玩家点一下配置按钮：切掉「玩家所站的那个面」的模式。
      *
      * <p>没做 AE2 那种六面小方块 UI —— 那个要画立方体、要处理鼠标拾取，
      * 而界面我无法验证。用「你站在哪边就改哪边」的规则，行为可预测且不用画图。</p>
      */
     public SideMode cycleSideNear(Player player) {
-        Direction face = Direction.getNearest(
-                player.getX() - (worldPosition.getX() + 0.5D),
-                player.getEyeY() - (worldPosition.getY() + 0.5D),
-                player.getZ() - (worldPosition.getZ() + 0.5D));
-        SideMode next = sides[face.ordinal()].next();
-        sides[face.ordinal()] = next;
-        setChanged();
-        return next;
+        return cycleSide(faceNear(player));
     }
 
     /** 玩家所站的那个面（给界面显示用）。 */
@@ -326,6 +331,40 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
             setChanged();
         }
         autoOutput();
+        pushEnergyOut();
+    }
+
+    /**
+     * 发电机把电推给相邻机器。
+     *
+     * <p>只有发电机推 —— 机器之间互相灌电会来回打架。每个面每次最多 4000 FE，
+     * 和外部管道的注入速率同量级。</p>
+     */
+    private void pushEnergyOut() {
+        if (machineKind != MachineKind.GENERATOR) {
+            return;
+        }
+        int stored = energy.getEnergyStored();
+        if (stored <= 0) {
+            return;
+        }
+        for (Direction direction : Direction.values()) {
+            if (stored <= 0) {
+                break;
+            }
+            IEnergyStorage target = level.getCapability(Capabilities.EnergyStorage.BLOCK,
+                    worldPosition.relative(direction), direction.getOpposite());
+            if (target == null || !target.canReceive()) {
+                continue;
+            }
+            int accepted = target.receiveEnergy(Math.min(stored, MachineKind.ENERGY_TRANSFER), true);
+            if (accepted <= 0) {
+                continue;
+            }
+            accepted = target.receiveEnergy(accepted, false);
+            energy.consume(accepted);
+            stored -= accepted;
+        }
     }
 
     /**

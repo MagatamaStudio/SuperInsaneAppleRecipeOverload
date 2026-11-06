@@ -43,6 +43,9 @@ public final class SiaoItems {
     public static final DeferredItem<Item> CHAOS_APPLE =
             ITEMS.registerSimpleItem("chaos_apple");
 
+    /** 苹果配置器：右键机器的某个面来切该面的通行规则（Mek 式）。 */
+    public static final DeferredItem<Item> CONFIGURATOR =
+            ITEMS.registerItem("configurator", SiaoConfiguratorItem::new);
     static {
         for (Material material : Material.values()) {
             for (int tier = 1; tier <= Material.MAX_TIER; tier++) {
@@ -121,6 +124,10 @@ public final class SiaoItems {
 
     public static Collection<DeferredItem<SiaoUpgradeItem>> upgrades() {
         return UPGRADES.values();
+    }
+
+    public static DeferredItem<Item> configurator() {
+        return CONFIGURATOR;
     }
 
     public static DeferredItem<Item> singularityShard() {
