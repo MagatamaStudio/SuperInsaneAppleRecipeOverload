@@ -509,6 +509,19 @@ public final class SiaoSelfTest {
                         "craft_(exposed_|weathered_|oxidized_)?compressed_1x_copper_(cut|polished|grate|chiseled)(_waxed)?"))
                 .count();
         check("铜：四种整块形状都有合成配方（32 条）", shapeRecipes == 32, shapeRecipes + " 条");
+
+        // 56 个铜方块都应该有「相当于 81 个铜锭」的等价提示
+        long copperVariantsWithoutTooltip = SiaoBlocks.copperVariants().stream()
+                .filter(block -> CompressionInfo.parse(
+                        net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block.get())).isEmpty())
+                .count();
+        check("铜：每个变种方块都能算出等价数", copperVariantsWithoutTooltip == 0,
+                copperVariantsWithoutTooltip + " 个算不出");
+        var stairInfo = CompressionInfo.parse(net.minecraft.resources.ResourceLocation.parse(
+                "siao:oxidized_compressed_1x_copper_stairs_waxed"));
+        check("铜：氧化涂蜡楼梯 = 81 个铜锭",
+                stairInfo.isPresent() && stairInfo.get().equivalents() == 81L,
+                stairInfo.map(info -> info.equivalents() + "").orElse("解析失败"));
     }
 
     /** 阶段 7：配置项。 */

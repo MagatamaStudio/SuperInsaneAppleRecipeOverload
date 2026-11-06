@@ -27,6 +27,15 @@ public record CompressionInfo(Material material, int tier, Kind kind) {
 
     private static final Pattern RAW = Pattern.compile("compressed_(\\d)x_raw_([a-z]+)(_block)?");
     private static final Pattern PLAIN = Pattern.compile("compressed_(\\d)x_([a-z]+)(_block)?");
+    /**
+     * 铜专线变种：{@code [stage_]compressed_1x_copper[_shape][_waxed]}。
+     *
+     * <p>这些是**方块变种**而不是压缩单位，等价数按一重块算。之前正则匹配不到它们，
+     * 结果 56 个铜方块全都没有等价提示 —— 压缩块有 tooltip、铜变种没有，看着就像坏了。</p>
+     */
+    private static final Pattern COPPER_VARIANT = Pattern.compile(
+            "(?:(?:exposed|weathered|oxidized)_)?compressed_(\\d)x_copper"
+                    + "(?:_(?:cut|polished|grate|chiseled|stairs|slab))?(?:_waxed)?");
 
     public static Optional<CompressionInfo> parse(ResourceLocation id) {
         if (!"siao".equals(id.getNamespace())) {
@@ -41,6 +50,12 @@ public record CompressionInfo(Material material, int tier, Kind kind) {
         Matcher plain = PLAIN.matcher(path);
         if (plain.matches()) {
             return build(plain, false);
+        }
+        // 铜变种兜底：带下划线形状名的匹配不上上面两个。必须是「块」，所以排除纯单位 id。
+        Matcher variant = COPPER_VARIANT.matcher(path);
+        if (variant.matches() && !path.equals("compressed_1x_copper")) {
+            int tier = Integer.parseInt(variant.group(1));
+            return Optional.of(new CompressionInfo(Material.COPPER, Math.max(1, tier), Kind.BLOCK));
         }
         return Optional.empty();
     }
