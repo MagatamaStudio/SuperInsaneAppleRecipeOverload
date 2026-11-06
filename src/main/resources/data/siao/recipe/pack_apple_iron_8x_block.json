@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_apple_iron",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_8x_apple_iron"
+  },
+  "result": {
+    "id": "siao:compressed_8x_apple_iron_block",
+    "count": 1
+  },
+  "count": 9,
+  "enchant": "preserve"
+}

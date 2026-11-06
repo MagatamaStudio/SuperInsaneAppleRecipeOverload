@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_apple_netherite",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_1x_apple_netherite"
+  },
+  "result": {
+    "id": "siao:apple_netherite_alloy",
+    "count": 9
+  },
+  "count": 1,
+  "enchant": "preserve"
+}

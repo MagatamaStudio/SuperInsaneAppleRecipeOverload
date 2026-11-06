@@ -43,6 +43,50 @@ public final class SiaoNames {
         return rawUnitId(material, tier) + "_block";
     }
 
+    // ---- C 线：氧化变种 ------------------------------------------------------
+
+    /** 氧化阶前缀：0 = 未氧化（无前缀）。 */
+    public static String stagePrefix(int stage) {
+        return switch (stage) {
+            case 1 -> "exposed_";
+            case 2 -> "weathered_";
+            case 3 -> "oxidized_";
+            default -> "";
+        };
+    }
+
+    /**
+     * 氧化变种 id：{@code [stage_]compressed_Nx_[raw_]mat_block[_waxed]}。
+     *
+     * <p>stage = 0 且不涂蜡时就是基础方块本身，调用方要跳过。</p>
+     */
+    public static String oxidizedBlockId(Material material, int tier, boolean raw, int stage, boolean waxed) {
+        String base = raw ? rawBlockId(material, tier) : unitBlockId(material, tier);
+        return stagePrefix(stage) + base + (waxed ? "_waxed" : "");
+    }
+
+    /** 中文名：斑驳/锈蚀/氧化 + 原名 + 涂蜡前缀。 */
+    public static String zhOxidizedBlock(Material material, int tier, boolean raw, int stage, boolean waxed) {
+        String stem = raw ? zhRawBlock(material, tier) : zhUnitBlock(material, tier);
+        String staged = switch (stage) {
+            case 1 -> "斑驳" + stem;
+            case 2 -> "锈蚀" + stem;
+            case 3 -> "氧化" + stem;
+            default -> stem;
+        };
+        return waxed ? "涂蜡" + staged : staged;
+    }
+
+    public static String enOxidizedBlock(Material material, int tier, boolean raw, int stage, boolean waxed) {
+        String stem = raw ? enRawBlock(material, tier) : enUnitBlock(material, tier);
+        String staged = switch (stage) {
+            case 1 -> "Exposed " + stem;
+            case 2 -> "Weathered " + stem;
+            case 3 -> "Oxidized " + stem;
+            default -> stem;
+        };
+        return waxed ? "Waxed " + staged : staged;
+    }
     // ---- 中文名 ---------------------------------------------------------------
 
     public static String zhUnit(Material material, int tier) {

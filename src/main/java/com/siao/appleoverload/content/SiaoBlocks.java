@@ -5,6 +5,7 @@ import com.siao.appleoverload.machine.AppleMachineBlock;
 import com.siao.appleoverload.machine.MachineKind;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.WeatheringCopper;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -29,6 +30,8 @@ public final class SiaoBlocks {
     private static final Map<String, DeferredBlock<Block>> RAW_BLOCKS = new LinkedHashMap<>();
     private static final Map<String, DeferredBlock<Block>> COPPER_VARIANTS = new LinkedHashMap<>();
     private static final Map<MachineKind, DeferredBlock<Block>> MACHINES = new EnumMap<>(MachineKind.class);
+    /** C 线：氧化/涂蜡变种。 */
+    private static final Map<String, DeferredBlock<Block>> OXIDIZED_BLOCKS = new LinkedHashMap<>();
 
     static {
         for (Material material : Material.values()) {
@@ -56,6 +59,17 @@ public final class SiaoBlocks {
                             .sound(SoundType.METAL)));
             MACHINES.put(kind, block);
             SiaoItems.registerBlockItem(id, block);
+        }
+
+        // ---- C 线：所有压缩方块都有 4 个氧化阶 × 涂蜡 ----------------------
+        // 未氧化+未涂蜡那格就是基础方块本身，跳过；其余 7 格在这里注册
+        for (Material material : Material.values()) {
+            for (int tier = 1; tier <= Material.MAX_TIER; tier++) {
+                registerOxidation(material, tier, false);
+                if (material.hasRawForm()) {
+                    registerOxidation(material, tier, true);
+                }
+            }
         }
 
         // 铜专线：4 氧化阶 × 5 整块形状 × 2 涂蜡 = 40，其中 1 格被阶段 1 的压缩块占用
@@ -86,11 +100,46 @@ public final class SiaoBlocks {
     private SiaoBlocks() {
     }
 
+    /**
+     * 给一个压缩方块注册它的 7 个氧化/涂蜡变种。
+     *
+     * <p>未涂蜡的那几阶用 {@link SiaoOxidizableBlock}（随机刻会往下氧化），
+     * 涂蜡的用普通 Block（锁死）。氧化链本身不写一行逻辑 —— 全部由
+     * {@code neoforge:oxidizables} / {@code neoforge:waxables} 数据映射驱动。</p>
+     */
+    private static void registerOxidation(Material material, int tier, boolean raw) {
+        for (int stage = 0; stage <= 3; stage++) {
+            for (boolean waxed : new boolean[]{false, true}) {
+                if (stage == 0 && !waxed) {
+                    continue;   // 这一格就是基础方块本身
+                }
+                String id = SiaoNames.oxidizedBlockId(material, tier, raw, stage, waxed);
+                BlockBehaviour.Properties properties = BlockBehaviour.Properties.of()
+                        .strength(2.0F, 6.0F)
+                        .requiresCorrectToolForDrops()
+                        .sound(SoundType.COPPER);
+                DeferredBlock<Block> block;
+                if (waxed) {
+                    block = BLOCKS.registerSimpleBlock(id, properties);
+                } else {
+                    WeatheringCopper.WeatherState state = switch (stage) {
+                        case 1 -> WeatheringCopper.WeatherState.EXPOSED;
+                        case 2 -> WeatheringCopper.WeatherState.WEATHERED;
+                        default -> WeatheringCopper.WeatherState.OXIDIZED;
+                    };
+                    block = BLOCKS.register(id, () -> new SiaoOxidizableBlock(state, properties.randomTicks()));
+                }
+                OXIDIZED_BLOCKS.put(id, block);
+                SiaoItems.registerBlockItem(id, block);
+            }
+        }
+    }
     private static DeferredBlock<Block> register(String id, Material material) {
         SoundType sound = material.form() == Material.Form.INGOT ? SoundType.METAL : SoundType.STONE;
-        return BLOCKS.registerSimpleBlock(id, BlockBehaviour.Properties.of()
-                .strength(2.0F, 6.0F)
-                .sound(sound));
+        // 基础方块本身就是氧化链的起点，必须也实现 WeatheringCopper + randomTicks
+        return BLOCKS.register(id, () -> new SiaoOxidizableBlock(
+                WeatheringCopper.WeatherState.UNAFFECTED,
+                BlockBehaviour.Properties.of().strength(2.0F, 6.0F).sound(sound).randomTicks()));
     }
 
     public static Collection<DeferredBlock<Block>> unitBlocks() {

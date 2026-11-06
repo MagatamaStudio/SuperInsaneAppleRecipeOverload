@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "siao:item/compressed_5x_apple_netherite"
+  }
+}

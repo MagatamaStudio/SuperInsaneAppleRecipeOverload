@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_apple_gold",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:apple_gold_alloy"
+  },
+  "result": {
+    "id": "siao:compressed_1x_apple_gold",
+    "count": 1
+  },
+  "count": 9,
+  "enchant": "preserve"
+}

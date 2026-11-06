@@ -38,6 +38,12 @@ VANILLA_BASE = {
     "coal": "minecraft:coal",
     "redstone": "minecraft:redstone",
     "apple": "minecraft:apple",
+    # 苹果合金线：第 0 重是自制物品（苹果 + 对应材料），没有粗形态
+    "apple_iron": "siao:apple_iron_alloy",
+    "apple_gold": "siao:apple_gold_alloy",
+    "apple_copper": "siao:apple_copper_alloy",
+    "apple_diamond": "siao:apple_diamond_alloy",
+    "apple_netherite": "siao:apple_netherite_alloy",
 }
 
 RAW_BASE = {
@@ -155,6 +161,21 @@ def main() -> None:
         "experience": 0.35,
         "cookingtime": 200,
     })
+
+    # ---- 苹果合金（原构想 L6：苹果和其他锭的合成）--------------------------
+    for alloy_id, ingredient in (
+        ("apple_iron", "minecraft:iron_ingot"),
+        ("apple_gold", "minecraft:gold_ingot"),
+        ("apple_copper", "minecraft:copper_ingot"),
+        ("apple_diamond", "minecraft:diamond"),
+        ("apple_netherite", "minecraft:netherite_ingot"),
+    ):
+        emit(f"craft_{alloy_id}_alloy", {
+            "type": "minecraft:crafting_shapeless",
+            "category": "misc",
+            "ingredients": [{"item": "minecraft:apple"}, {"item": ingredient}],
+            "result": {"id": f"{MOD_ID}:{alloy_id}_alloy", "count": 1},
+        })
 
     shaped("craft_apple_compressor",
            ["III", "IPI", "III"],

@@ -51,6 +51,9 @@ public final class SiaoItems {
      */
     public static final DeferredItem<Item> RAW_APPLE_GOLD =
             ITEMS.registerItem("raw_apple_gold", SiaoCompressedItem::new);
+    /** 苹果合金基础物品（苹果 + 对应材料锭合成），压缩链的第 0 重。 */
+    public static final java.util.Map<Material, DeferredItem<Item>> ALLOYS =
+            new java.util.EnumMap<>(Material.class);
     /** 苹果配置器：右键机器的某个面来切该面的通行规则（Mek 式）。 */
     public static final DeferredItem<Item> CONFIGURATOR =
             ITEMS.registerItem("configurator", SiaoConfiguratorItem::new);
@@ -67,6 +70,12 @@ public final class SiaoItems {
             }
         }
 
+        registerAlloy(Material.APPLE_IRON, "apple_iron_alloy");
+        registerAlloy(Material.APPLE_GOLD, "apple_gold_alloy");
+        registerAlloy(Material.APPLE_COPPER, "apple_copper_alloy");
+        registerAlloy(Material.APPLE_DIAMOND, "apple_diamond_alloy");
+        registerAlloy(Material.APPLE_NETHERITE, "apple_netherite_alloy");
+
         registerUpgrade(SiaoUpgrades.SPEED);
         registerUpgrade(SiaoUpgrades.ENERGY);
         registerUpgrade(SiaoUpgrades.PARALLEL);
@@ -74,6 +83,14 @@ public final class SiaoItems {
         registerUpgrade(SiaoUpgrades.OVERCLOCK);
         registerUpgrade(SiaoUpgrades.QUANTUM);
         registerUpgrade(SiaoUpgrades.FISSION);
+    }
+
+    private static void registerAlloy(Material material, String id) {
+        ALLOYS.put(material, ITEMS.registerItem(id, SiaoCompressedItem::new));
+    }
+
+    public static DeferredItem<Item> alloy(Material material) {
+        return ALLOYS.get(material);
     }
 
     private static DeferredItem<SiaoUpgradeItem> registerUpgrade(DeferredHolder<UpgradeType, UpgradeType> type) {

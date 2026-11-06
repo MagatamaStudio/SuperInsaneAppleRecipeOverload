@@ -194,7 +194,7 @@ public final class SiaoSelfTest {
         long loaded = server.getRecipeManager().getRecipes().stream()
                 .filter(holder -> holder.value() instanceof SiaoCompressionRecipe)
                 .count();
-        check("自定义压缩配方装载数 = 578", loaded == 578L, loaded + " 条");
+        check("自定义压缩配方装载数 = 758", loaded == 758L, loaded + " 条");
 
         machineCases(server);
         sideConfigCases(server);
@@ -203,6 +203,7 @@ public final class SiaoSelfTest {
         orchardCases(server);
         generatorCases(server);
         configuratorCases(server);
+        oxidationCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
@@ -306,6 +307,28 @@ public final class SiaoSelfTest {
         return !path.matches(".*_(cut|polished|grate|chiseled|stairs|slab)(_waxed)?$");
     }
 
+    /** C 线：氧化链必须真的挂上（之前那 55 个铜变种根本没实现 WeatheringCopper）。 */
+    private static void oxidationCases(MinecraftServer server) {
+        var registry = server.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BLOCK);
+        Block ironBlock = SiaoBlocks.unitBlock(Material.IRON, 1).get();
+        Block exposed = registry.get(net.minecraft.resources.ResourceLocation.parse("siao:exposed_compressed_1x_iron_block"));
+        Block weathered = registry.get(net.minecraft.resources.ResourceLocation.parse("siao:weathered_compressed_1x_iron_block"));
+        Block oxidized = registry.get(net.minecraft.resources.ResourceLocation.parse("siao:oxidized_compressed_1x_iron_block"));
+        Block waxed = registry.get(net.minecraft.resources.ResourceLocation.parse("siao:oxidized_compressed_1x_iron_block_waxed"));
+
+        check("氧化：铁块 → 斑驳 → 锈蚀 → 氧化 成链",
+                net.minecraft.world.level.block.WeatheringCopper.getNext(ironBlock).orElse(null) == exposed
+                        && net.minecraft.world.level.block.WeatheringCopper.getNext(exposed).orElse(null) == weathered
+                        && net.minecraft.world.level.block.WeatheringCopper.getNext(weathered).orElse(null) == oxidized,
+                "链断了");
+        check("氧化：最后一阶不再氧化",
+                net.minecraft.world.level.block.WeatheringCopper.getNext(oxidized).isEmpty(), "");
+        check("氧化：未涂蜡的方块会随机刻氧化",
+                ironBlock instanceof net.minecraft.world.level.block.WeatheringCopper
+                        && exposed instanceof net.minecraft.world.level.block.WeatheringCopper, "");
+        check("氧化：涂蜡版不氧化",
+                !(waxed instanceof net.minecraft.world.level.block.WeatheringCopper), waxed.toString());
+    }
     /** 配置器（Mek 式）与发电机推送。 */
     private static void configuratorCases(MinecraftServer server) {
         AppleMachineBlockEntity machine = place(server, MachineKind.COMPRESSOR, new BlockPos(22, 210, 0));
@@ -688,10 +711,10 @@ public final class SiaoSelfTest {
         ItemStack unit2 = new ItemStack(SiaoItems.unit(Material.IRON, 2).get());
         ItemStack shard = new ItemStack(SiaoItems.singularityShard().get());
 
-        // 304 = 15 个原版输入 + 1 个粗苹果金 + 144 个压缩单位（108 普通 + 36 粗）+ 144 个压缩块
+        // 399 = 15 个原版输入 + 1 个粗苹果金 + 5 个合金基础物品 + 189 个压缩单位 + 189 个压缩块
         // （压缩/拆分/装块/拆块四类配方现在都在同一张索引里）
-        check("压缩索引覆盖 304 种输入",
-                CompressionIndex.size(server.getRecipeManager()) == 304,
+        check("压缩索引覆盖 399 种输入",
+                CompressionIndex.size(server.getRecipeManager()) == 399,
                 CompressionIndex.size(server.getRecipeManager()) + " 种");
 
         // ★ L12 科技树绑定：压缩链（单位 ↔ 单位、单位 ↔ 块）的东西不能在工作台合成。

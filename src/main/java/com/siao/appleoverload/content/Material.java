@@ -21,6 +21,12 @@ public enum Material {
      */
     APPLE("apple", "苹果锭", "Apple Ingot", Form.INGOT, "粗苹果金", "Raw Apple Gold"),
     NETHERITE("netherite", "下界合金锭", "Netherite Ingot", Form.INGOT, null, null),
+    // ---- 苹果合金线（原构想 L6「苹果和其他锭的合成」）-------------------------
+    APPLE_IRON("apple_iron", "苹果铁合金", "Apple Iron Alloy", Form.INGOT, null, null),
+    APPLE_GOLD("apple_gold", "苹果金合金", "Apple Gold Alloy", Form.INGOT, null, null),
+    APPLE_COPPER("apple_copper", "苹果铜合金", "Apple Copper Alloy", Form.INGOT, null, null),
+    APPLE_DIAMOND("apple_diamond", "苹果钻石合金", "Apple Diamond Alloy", Form.GEM, null, null),
+    APPLE_NETHERITE("apple_netherite", "苹果下界合金", "Apple Netherite Alloy", Form.INGOT, null, null),
     DIAMOND("diamond", "钻石", "Diamond", Form.GEM, null, null),
     EMERALD("emerald", "绿宝石", "Emerald", Form.GEM, null, null),
     LAPIS("lapis", "青金石", "Lapis Lazuli", Form.GEM, null, null),

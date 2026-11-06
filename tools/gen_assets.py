@@ -54,6 +54,11 @@ MATERIALS = [
     ("coal",      "煤",         "Coal",            "COAL",               "COAL_BLOCK",      False),
     ("redstone",  "红石",       "Redstone",        "REDSTONE",           "REDSTONE_BLOCK",  False),
     ("apple",     "苹果锭",     "Apple Ingot",     "APPLE",              None,              True),
+("apple_iron",      "苹果铁合金",   "Apple Iron Alloy",   "IRON_INGOT",      "IRON_BLOCK",      False),
+("apple_gold",      "苹果金合金",   "Apple Gold Alloy",   "GOLD_INGOT",      "GOLD_BLOCK",      False),
+("apple_copper",    "苹果铜合金",   "Apple Copper Alloy", "COPPER_INGOT",    "COPPER_BLOCK",    False),
+("apple_diamond",   "苹果钻石合金", "Apple Diamond Alloy","DIAMOND",         "DIAMOND_BLOCK",   False),
+("apple_netherite", "苹果下界合金", "Apple Netherite Alloy","NETHERITE_INGOT","NETHERITE_BLOCK",False),
 ]
 
 RAW_BASE = {"iron": "RAW_IRON", "gold": "RAW_GOLD", "copper": "RAW_COPPER", "apple": "RAW_GOLD"}
@@ -436,6 +441,25 @@ def make_raw_apple_gold_texture() -> Image.Image:
                fill=(255, 176, 160, 200))
     return Image.alpha_composite(base, overlay)
 
+
+ALLOY_BASE_TEXTURE = {
+    "APPLE_IRON_ALLOY": "IRON_INGOT",
+    "APPLE_GOLD_ALLOY": "GOLD_INGOT",
+    "APPLE_COPPER_ALLOY": "COPPER_INGOT",
+    "APPLE_DIAMOND_ALLOY": "DIAMOND",
+    "APPLE_NETHERITE_ALLOY": "NETHERITE_INGOT",
+}
+
+
+def make_alloy_texture(base_name: str):
+    """苹果合金：对应材料的原版贴图 + 一层苹果红。"""
+    def factory() -> Image.Image:
+        base = load_base(base_name, ITEM_SIZE).convert("RGBA")
+        tint = Image.new("RGBA", base.size, (198, 46, 40, 110))
+        return Image.alpha_composite(base, tint)
+    return factory
+
+
 def make_configurator_texture() -> Image.Image:
     """配置器：一把扳手轮廓 + 红色握柄。"""
     size = ITEM_SIZE
@@ -750,6 +774,44 @@ def main() -> None:
                            f"{ZH_TIERS[tier]}重压缩{raw_zh}块", f"{num_prefix(tier)}Compressed {raw_en} Block")
                 counts["block"] += 1
 
+    # ---- C 线：所有压缩方块的氧化变种 --------------------------------------
+    OX_STAGES = [(1, "exposed_", "斑驳", "Exposed", (150, 178, 152)),
+                 (2, "weathered_", "锈蚀", "Weathered", (110, 160, 140)),
+                 (3, "oxidized_", "氧化", "Oxidized", (82, 162, 148))]
+    ox_next = {}
+    wax_map = {}
+    ox_blocks = 0
+    for mat_id, zh, en, item_base, block_base, has_raw in MATERIALS:
+        for tier in range(1, MAX_TIER + 1):
+            for raw in ([False, True] if has_raw else [False]):
+                base_id = raw_block_id(mat_id, tier) if raw else unit_block_id(mat_id, tier)
+                zh_stem = (zh_raw(zh, tier) if raw else zh_unit(zh, tier)) + "块"
+                en_stem = (f"{num_prefix(tier)}Compressed {en_raw(en)}" if raw
+                           else f"{num_prefix(tier)}Compressed {en}") + " Block"
+                # 0 阶涂蜡
+                emit_block(f"{base_id}_waxed", average_color(load_base(block_base or item_base, 64)),
+                           tier, "涂蜡" + zh_stem, "Waxed " + en_stem)
+                ox_blocks += 1
+                wax_map[f"{MOD_ID}:{base_id}"] = f"{MOD_ID}:{base_id}_waxed"
+                prev = base_id
+                for stage, prefix, zh_s, en_s, color in OX_STAGES:
+                    sid = f"{prefix}{base_id}"
+                    emit_block(sid, color, tier, zh_s + zh_stem, en_s + " " + en_stem)
+                    emit_block(f"{sid}_waxed", color, tier, "涂蜡" + zh_s + zh_stem,
+                               "Waxed " + en_s + " " + en_stem)
+                    ox_blocks += 2
+                    ox_next[f"{MOD_ID}:{prev}"] = f"{MOD_ID}:{sid}"
+                    wax_map[f"{MOD_ID}:{sid}"] = f"{MOD_ID}:{sid}_waxed"
+                    prev = sid
+
+    # 合并进 data map（保留铜专线已有的条目）
+    for map_path, pairs in (
+        (ROOT / "src/main/resources/data/neoforge/data_maps/block/oxidizables.json", ox_next),
+        (ROOT / "src/main/resources/data/neoforge/data_maps/block/waxables.json", wax_map),
+    ):
+        existing = json.loads(map_path.read_text(encoding="utf-8")) if map_path.exists() else {"values": {}}
+        existing.setdefault("values", {}).update(pairs)
+        write_json(map_path, existing)
     # ---- 机器 ---------------------------------------------------------------
     for machine_id, zh, en, base, accent in MACHINES:
         block_id = f"apple_{machine_id}"
@@ -783,6 +845,11 @@ def main() -> None:
     specials = [
         ("configurator", "苹果配置器", "Apple Configurator", make_configurator_texture),
         ("raw_apple_gold", "粗苹果金", "Raw Apple Gold", make_raw_apple_gold_texture),
+    ("apple_iron_alloy", "苹果铁合金", "Apple Iron Alloy", make_alloy_texture("IRON_INGOT")),
+    ("apple_gold_alloy", "苹果金合金", "Apple Gold Alloy", make_alloy_texture("GOLD_INGOT")),
+    ("apple_copper_alloy", "苹果铜合金", "Apple Copper Alloy", make_alloy_texture("COPPER_INGOT")),
+    ("apple_diamond_alloy", "苹果钻石合金", "Apple Diamond Alloy", make_alloy_texture("DIAMOND")),
+    ("apple_netherite_alloy", "苹果下界合金", "Apple Netherite Alloy", make_alloy_texture("NETHERITE_INGOT")),
     ("singularity_shard", "奇点碎片", "Singularity Shard", make_shard_texture),
         ("singularity", "绝对苹果奇点", "Absolute Apple Singularity", make_singularity_texture),
         ("chaos_apple", "混沌苹果", "Chaos Apple", make_chaos_apple_texture),
@@ -887,8 +954,12 @@ def main() -> None:
             if waxed_id:
                 waxables[f"{MOD_ID}:{current}"] = {"waxed": f"{MOD_ID}:{waxed_id}"}
 
-    write_json(data_maps / "oxidizables.json", {"values": oxidizables})
-    write_json(data_maps / "waxables.json", {"values": waxables})
+    # 合并而不是覆盖：C 线已经把全部材料的氧化链写进去了
+    for map_path, pairs in ((data_maps / "oxidizables.json", oxidizables),
+                            (data_maps / "waxables.json", waxables)):
+        existing = json.loads(map_path.read_text(encoding="utf-8")) if map_path.exists() else {"values": {}}
+        existing.setdefault("values", {}).update(pairs)
+        write_json(map_path, existing)
 
     # ---- 方块标签：可被镐加速/可掉落 ----------------------------------------
     # ⚠️ 带 requiresCorrectToolForDrops 的方块如果不在 #minecraft:mineable/pickaxe 里，

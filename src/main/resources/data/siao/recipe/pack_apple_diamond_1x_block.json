@@ -1,0 +1,14 @@
+{
+  "type": "siao:compression",
+  "group": "compressed_apple_diamond",
+  "category": "misc",
+  "ingredient": {
+    "item": "siao:compressed_1x_apple_diamond"
+  },
+  "result": {
+    "id": "siao:compressed_1x_apple_diamond_block",
+    "count": 1
+  },
+  "count": 9,
+  "enchant": "preserve"
+}

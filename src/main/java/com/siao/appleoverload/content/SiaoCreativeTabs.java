@@ -26,6 +26,7 @@ public final class SiaoCreativeTabs {
                         SiaoItems.blockItems().forEach(item -> output.accept(item.get()));
                         SiaoItems.upgrades().forEach(item -> output.accept(item.get()));
                         output.accept(SiaoItems.rawAppleGold().get());
+                        SiaoItems.ALLOYS.values().forEach(item -> output.accept(item.get()));
                         output.accept(SiaoItems.configurator().get());
                         output.accept(SiaoItems.singularityShard().get());
                         output.accept(SiaoItems.singularity().get());
