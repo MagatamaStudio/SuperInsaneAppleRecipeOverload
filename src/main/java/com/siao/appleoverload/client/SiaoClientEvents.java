@@ -1,5 +1,6 @@
 package com.siao.appleoverload.client;
 
+import com.siao.appleoverload.SiaoMod;
 import com.siao.appleoverload.machine.AppleMachineScreen;
 import com.siao.appleoverload.machine.MachineKind;
 import com.siao.appleoverload.machine.SiaoMachineRegistry;
@@ -19,6 +20,16 @@ public final class SiaoClientEvents {
 
     public static void register(IEventBus modBus) {
         modBus.addListener(SiaoClientEvents::onRegisterMenuScreens);
+        // 视觉测试 harness 只在 -Dsiao.visualtest=true 时挂上（runVisualtest）；
+        // 生产 jar 里没有这个类，反射拿不到就静默跳过
+        try {
+            Class.forName("com.siao.appleoverload.client.SiaoVisualTest")
+                    .getMethod("register").invoke(null);
+        } catch (ClassNotFoundException notInProductionJar) {
+            SiaoMod.LOGGER.debug("视觉测试类未打包，跳过");
+        } catch (ReflectiveOperationException reflectiveFailure) {
+            SiaoMod.LOGGER.warn("视觉测试注册失败", reflectiveFailure);
+        }
     }
 
     private static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {

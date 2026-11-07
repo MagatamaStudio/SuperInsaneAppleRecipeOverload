@@ -27,3 +27,5 @@ src/generated/resources/.cache/
 
 # JEI 编译期依赖（插件编译需要，玩家侧可选）
 !gradle/offline-repo/jei/
+# AE2 全量 jar（视觉测试 harness 编译期需要 AE2 内部类，玩家侧可选）
+!gradle/offline-repo/ae2/

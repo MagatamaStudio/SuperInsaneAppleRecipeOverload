@@ -30,6 +30,14 @@ neoForge {
             data()
             programArguments.addAll '--mod', mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
+        // 纯视觉测试：自动进测试世界 → GUI 截图 / AE2 真网格 / 平衡观测 → 自动退出。
+        // 前置：run/saves/siao_visualtest 需已存在（复制自「新的世界」），
+        // AE2/EMI 需在 run/mods 里（见 docs/BUILDING.md）。
+        visualtest {
+            client()
+            programArguments.addAll '--quickPlaySingleplayer', 'siao_visualtest'
+            systemProperty 'siao.visualtest', 'true'
+        }
     }
 
     mods {
@@ -51,6 +59,9 @@ repositories {
 dependencies {
     // AE2 只用到 appeng.api.*，api jar 足够；compileOnly 保证服务器/客户端没装 AE2 也能跑
     compileOnly "org.appliedenergistics:appliedenergistics2:19.2.18:api"
+    // 视觉测试 harness（SiaoVisualTest）需要 AE2 内部类（PartPlacement / PatternProviderLogic /
+    // AECraftingPattern），所以全量 jar 也放一份到离线仓库。生产代码不引用它。
+    compileOnly files("gradle/offline-repo/ae2/appliedenergistics2-19.2.18.jar")
     // JEI 只在开发期编译插件用；玩家侧是可选的，没装 JEI 时插件类不会被加载
     compileOnly files("gradle/offline-repo/jei/jei-1.21.1-neoforge-19.8.4.113.jar")
     compileOnly files("gradle/offline-repo/jei/emi-1.1.24.jar")
@@ -83,4 +94,6 @@ tasks.withType(JavaCompile).configureEach {
 // 不该发给玩家。开发环境的 runServer 直接从源码跑，CI 的自检不受影响。
 tasks.named('jar') {
     exclude 'com/siao/appleoverload/content/SiaoSelfTest*.class'
+    // 视觉测试 harness 只活在开发环境（runVisualtest），不带进玩家 jar
+    exclude 'com/siao/appleoverload/client/SiaoVisualTest*.class'
 }
