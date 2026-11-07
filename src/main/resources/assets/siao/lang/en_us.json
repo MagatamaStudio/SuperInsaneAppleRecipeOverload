@@ -10797,5 +10797,6 @@
   "tag.siao.specials": "Special Items",
   "tag.siao.upgrades": "Machine Upgrades",
   "tooltip.siao.equivalent": "Equivalent to %s × %s",
+  "tooltip.siao.packing": "9 can be packed into a block: sneak-right-click a compressor to toggle packing mode",
   "tooltip.siao.side_button": "Cycle the item access on the face you are standing at"
 }

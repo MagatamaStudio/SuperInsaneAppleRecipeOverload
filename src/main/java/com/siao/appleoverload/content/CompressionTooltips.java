@@ -36,6 +36,13 @@ public final class CompressionTooltips {
                                     NUMBERS.format(amount),
                                     Component.translatable(info.materialKey()))
                             .withStyle(ChatFormatting.GRAY));
+                    // 装块路线在 EMI 里和升重配方被合并，看不出来 ——
+                    // 至少让玩家知道「9 个能装成块」这件事存在
+                    if (info.kind() == CompressionInfo.Kind.UNIT
+                            || info.kind() == CompressionInfo.Kind.RAW_UNIT) {
+                        event.getToolTip().add(Component.translatable("tooltip.siao.packing")
+                                .withStyle(ChatFormatting.DARK_GRAY));
+                    }
                 });
     }
 }

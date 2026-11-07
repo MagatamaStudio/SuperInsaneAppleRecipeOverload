@@ -10804,5 +10804,6 @@
   "tag.siao.specials": "特殊物品",
   "tag.siao.upgrades": "机器升级",
   "tooltip.siao.equivalent": "%s 個の%sに相当",
+  "tooltip.siao.packing": "9 個でブロックに梱包可能：圧縮機をスニーク右クリックで梱包モード切替",
   "tooltip.siao.side_button": "点击切换「你站的这一面」的物品通行规则"
 }

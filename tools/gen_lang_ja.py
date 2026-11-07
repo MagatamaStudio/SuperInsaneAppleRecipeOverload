@@ -92,6 +92,7 @@ DIRECT = {
     "side.siao.output": "出力のみ",
     "side.siao.none": "閉鎖",
     "tooltip.siao.equivalent": "%s 個の%sに相当",
+    "tooltip.siao.packing": "9 個でブロックに梱包可能：圧縮機をスニーク右クリックで梱包モード切替",
     "jei.siao.compression": "圧縮（機械）",
 }
 

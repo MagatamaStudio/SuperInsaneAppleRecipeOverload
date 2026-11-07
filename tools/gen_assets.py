@@ -703,6 +703,7 @@ def main() -> None:
     "itemGroup.siao.chiseled": "雕纹方块",
     "itemGroup.siao.stairs": "楼梯与台阶",
         "tooltip.siao.equivalent": "相当于 %s 个%s",
+    "tooltip.siao.packing": "9 个可装成方块：在压缩机上潜行右键切换装块模式",
         "jei.siao.compression": "压缩（机器）",
     "prefix.siao.enchanted": "附魔",
         "side.siao.both": "双向",
