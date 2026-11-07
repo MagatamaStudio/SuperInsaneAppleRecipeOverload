@@ -328,6 +328,8 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         }
         autoOutput();
         pushEnergyOut();
+        // AE2 装了才走这条；没装时 Ae2Compat 里直接返回，AE2 的类不会被解析
+        com.siao.appleoverload.compat.Ae2Compat.tick(this);
     }
 
     /**
@@ -700,6 +702,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
 
     @Override
     public void setRemoved() {
+        com.siao.appleoverload.compat.Ae2Compat.removed(this);
         if (chunkForced && level instanceof ServerLevel serverLevel) {
             serverLevel.setChunkForced(worldPosition.getX() >> 4, worldPosition.getZ() >> 4, false);
         }

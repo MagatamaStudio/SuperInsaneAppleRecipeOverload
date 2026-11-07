@@ -54,6 +54,11 @@ public final class Ae2Integration {
         //    SIMULATE 必须准确且不改状态，否则会吞料。
         event.registerBlockEntity(AECapabilities.ME_STORAGE, SiaoMachineRegistry.MACHINE.get(),
                 Ae2Storage::new);
+        // 档位 3：ME 直连。机器自己就是网格节点，用线缆连上就有电有网，
+        // 不需要额外的 ME 接口方块。
+        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST,
+                SiaoMachineRegistry.MACHINE.get(),
+                (machine, context) -> Ae2GridHost.of(machine));
     }
 
     /**
