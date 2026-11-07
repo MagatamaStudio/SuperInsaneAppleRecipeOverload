@@ -513,10 +513,14 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
             }
             int consumed = 0;
             for (int slot = 0; slot < MachineKind.COMPRESSOR.inputSlots() && consumed < recipe.count(); slot++) {
-                if (!inventory.getStackInSlot(slot).isEmpty()) {
-                    inventory.extractItem(slot, 1, false);
-                    consumed++;
+                ItemStack stack = inventory.getStackInSlot(slot);
+                if (stack.isEmpty()) {
+                    continue;
                 }
+                // 按剩余需求量跨槽抽取：批量喂料时 9 个可能堆在同一槽里
+                int take = Math.min(stack.getCount(), recipe.count() - consumed);
+                inventory.extractItem(slot, take, false);
+                consumed += take;
             }
             return true;
         }

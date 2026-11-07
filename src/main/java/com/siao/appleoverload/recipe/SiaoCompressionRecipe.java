@@ -123,10 +123,6 @@ public record SiaoCompressionRecipe(
             if (stack.isEmpty()) {
                 continue;
             }
-            // 多于 count 个物品：不是给这条配方准备的
-            if (found >= count) {
-                return false;
-            }
             if (!ingredient.test(stack)) {
                 return false;
             }
@@ -138,17 +134,21 @@ public record SiaoCompressionRecipe(
             if (enchantMode == EnchantMode.REQUIRE && !enchanted) {
                 return false;
             }
-            // 混合输入拒绝：9 个格子里附魔状态必须一致
+            // 混合输入拒绝：所有非空槽的附魔状态必须一致
             if (uniformEnchant == null) {
                 uniformEnchant = enchanted;
             } else if (uniformEnchant != enchanted) {
                 return false;
             }
 
-            found++;
+            // 按总数计数：漏斗 / AE2 整批推料会把 N 个同种物品堆进同一个槽，
+            // 逐格计数（一槽算一个）会把这种合法输入判死，机器对批量喂料直接卡死
+            found += stack.getCount();
         }
 
-        return found == count;
+        // 拆分 / 拆块（count=1）保持单件精确语义：只认恰好 1 个；
+        // 升重 / 装块（count=9）按总数匹配，多出来的留给下一轮操作继续压
+        return count == 1 ? found == 1 : found >= count;
     }
 
     /**
