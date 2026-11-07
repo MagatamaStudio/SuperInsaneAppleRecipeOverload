@@ -841,12 +841,15 @@ def main() -> None:
                         ox_blocks += 2
                     # 楼梯 / 台阶（base 色）
                     base_color0 = average_color(load_base(block_base or item_base, 64))
+                    zh_core0 = zh_stem[:-1] if zh_stem.endswith("块") else zh_stem
+                    en_core0 = en_stem[:-6] if en_stem.endswith(" Block") else en_stem
                     for shape, zh_shape, en_shape in (("stairs", "楼梯", "Stairs"), ("slab", "台阶", "Slab")):
                         sid_shape = f"compressed_{tier}x_" + (f"raw_{mat_id}" if raw else mat_id) + f"_{shape}"
                         emit_shape_variant(sid_shape, base_color0, False,
-                                           zh_shape + zh_stem, en_shape + " " + en_stem, shape)
+                                           zh_core0 + zh_shape, en_core0 + " " + en_shape, shape)
                         emit_shape_variant(f"{sid_shape}_waxed", base_color0, True,
-                                           "涂蜡" + zh_shape + zh_stem, "Waxed " + en_shape + " " + en_stem, shape)
+                                           "涂蜡" + zh_core0 + zh_shape,
+                                           "Waxed " + en_core0 + " " + en_shape, shape)
                 prev = base_id
                 for stage, prefix, zh_s, en_s, color in OX_STAGES:
                     sid = f"{prefix}{base_id}"
@@ -873,13 +876,16 @@ def main() -> None:
                                        "Waxed " + en_shape + " " + en_s + " " + en_stem)
                             ox_blocks += 2
                         # 楼梯 / 台阶（跟随氧化阶）
+                        zh_core = zh_stem[:-1] if zh_stem.endswith("块") else zh_stem
+                        en_core = en_stem[:-6] if en_stem.endswith(" Block") else en_stem
                         for shape, zh_shape, en_shape in (("stairs", "楼梯", "Stairs"), ("slab", "台阶", "Slab")):
                             stain = f"{prefix}compressed_{tier}x_" + (f"raw_{mat_id}" if raw else mat_id) + f"_{shape}"
                             emit_shape_variant(stain, color, False,
-                                               zh_shape + zh_s + zh_stem, en_shape + " " + en_s + " " + en_stem, shape)
+                                               zh_s + zh_core + zh_shape,
+                                               en_s + " " + en_core + " " + en_shape, shape)
                             emit_shape_variant(f"{stain}_waxed", color, True,
-                                               "涂蜡" + zh_shape + zh_s + zh_stem,
-                                               "Waxed " + en_shape + " " + en_s + " " + en_stem, shape)
+                                               "涂蜡" + zh_s + zh_core + zh_shape,
+                                               "Waxed " + en_s + " " + en_core + " " + en_shape, shape)
 
     # 合并进 data map（保留铜专线已有的条目）
     for map_path, pairs in (
@@ -1004,13 +1010,23 @@ def main() -> None:
         stage_en = next(en for pfx, _, en, _ in COPPER_STAGES if pfx == stage_prefix)
         shape_zh = next(zh for sfx, zh, _ in COPPER_SHAPES if sfx == shape_suffix)
         shape_en = next(en for sfx, _, en in COPPER_SHAPES if sfx == shape_suffix)
-        zh_lang[f"block.{MOD_ID}.{block_id}"] = (
-            ("涂蜡" if waxed else "") + stage_zh + shape_zh + "一重压缩铜锭块")
-        en_lang[f"block.{MOD_ID}.{block_id}"] = (
-            ("Waxed " if waxed else "")
-            + (stage_en + " " if stage_en else "")
-            + (shape_en + " " if shape_en else "")
-            + "1x Compressed Copper Ingot Block")
+        copper_stem_zh = "一重压缩铜锭" if (is_stairs or is_slab) else "一重压缩铜锭块"
+        copper_stem_en = "1x Compressed Copper Ingot" if (is_stairs or is_slab) else "1x Compressed Copper Ingot Block"
+        if is_stairs or is_slab:
+            zh_lang[f"block.{MOD_ID}.{block_id}"] = (
+                ("涂蜡" if waxed else "") + stage_zh + copper_stem_zh + shape_zh)
+            en_lang[f"block.{MOD_ID}.{block_id}"] = (
+                ("Waxed " if waxed else "")
+                + (stage_en + " " if stage_en else "")
+                + copper_stem_en + " " + shape_en)
+        else:
+            zh_lang[f"block.{MOD_ID}.{block_id}"] = (
+                ("涂蜡" if waxed else "") + stage_zh + shape_zh + copper_stem_zh)
+            en_lang[f"block.{MOD_ID}.{block_id}"] = (
+                ("Waxed " if waxed else "")
+                + (stage_en + " " if stage_en else "")
+                + (shape_en + " " if shape_en else "")
+                + copper_stem_en)
         counts["block"] += 1
 
     # ---- data map：氧化 / 涂蜡（命名空间必须是 neoforge）--------------------
