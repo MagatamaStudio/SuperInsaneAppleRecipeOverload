@@ -14,7 +14,8 @@ Thumbs.db
 .DS_Store
 
 # 本地离线插件仓库（第三方 jar，不入库；用 gradle/setup-offline-repo.ps1 重建）
-gradle/offline-repo/
+# 注意用 /* 而不是整个目录：整个目录被忽略时，下面的 ! 例外不生效
+gradle/offline-repo/*
 
 # 本地研究资料（体积大，不纳入版本管理）
 _research/
