@@ -37,6 +37,16 @@ public record CompressionInfo(Material material, int tier, Kind kind) {
             "(?:(?:exposed|weathered|oxidized)_)?compressed_(\\d)x_copper"
                     + "(?:_(?:cut|polished|grate|chiseled|stairs|slab))?(?:_waxed)?");
 
+    /**
+     * C/D 线的变种：{@code [stage_]compressed_Nx_[raw_]material[_shape][_waxed]}。
+     *
+     * <p>material 里可能带下划线（{@code apple_netherite}），所以不能用一条大正则，
+     * 改成「按已知后缀逐层剥」再解析。</p>
+     */
+    private static final Pattern VARIANT = Pattern.compile(
+            "(?:(?:exposed|weathered|oxidized)_)?compressed_(\\d)x_(raw_)?(.+)");
+    private static final String[] SHAPES = {"cut", "polished", "grate", "chiseled", "stairs", "slab"};
+
     public static Optional<CompressionInfo> parse(ResourceLocation id) {
         if (!"siao".equals(id.getNamespace())) {
             return Optional.empty();
@@ -51,13 +61,60 @@ public record CompressionInfo(Material material, int tier, Kind kind) {
         if (plain.matches()) {
             return build(plain, false);
         }
-        // 铜变种兜底：带下划线形状名的匹配不上上面两个。必须是「块」，所以排除纯单位 id。
+        // 铜专线兜底（保留原行为）
         Matcher variant = COPPER_VARIANT.matcher(path);
         if (variant.matches() && !path.equals("compressed_1x_copper")) {
             int tier = Integer.parseInt(variant.group(1));
             return Optional.of(new CompressionInfo(Material.COPPER, Math.max(1, tier), Kind.BLOCK));
         }
-        return Optional.empty();
+        return parseVariant(path);
+    }
+
+    /**
+     * C/D 线变种的解析：剥掉 {@code _waxed} 和形状后缀，剩下的当材料 id 查表。
+     *
+     * <p>这样 10,548 个方块全都有「相当于 N 个单位」的提示，不再只有铜专线有。</p>
+     */
+    private static Optional<CompressionInfo> parseVariant(String path) {
+        Matcher matcher = VARIANT.matcher(path);
+        if (!matcher.matches()) {
+            return Optional.empty();
+        }
+        int tier;
+        try {
+            tier = Integer.parseInt(matcher.group(1));
+        } catch (NumberFormatException notANumber) {
+            return Optional.empty();
+        }
+        if (tier < 1 || tier > Material.MAX_TIER) {
+            return Optional.empty();
+        }
+        boolean rawForm = matcher.group(2) != null;
+        String rest = matcher.group(3);
+
+        boolean block = false;
+        if (rest.endsWith("_waxed")) {
+            rest = rest.substring(0, rest.length() - "_waxed".length());
+        }
+        rest = rest.endsWith("_block") ? rest.substring(0, rest.length() - "_block".length()) : rest;
+        for (String shape : SHAPES) {
+            if (rest.endsWith("_" + shape)) {
+                rest = rest.substring(0, rest.length() - shape.length() - 1);
+                block = true;
+                break;
+            }
+        }
+        Material material = Material.byId(rest).orElse(null);
+        if (material == null) {
+            return Optional.empty();
+        }
+        Kind kind;
+        if (rawForm) {
+            kind = block ? Kind.RAW_BLOCK : Kind.RAW_UNIT;
+        } else {
+            kind = block ? Kind.BLOCK : Kind.UNIT;
+        }
+        return Optional.of(new CompressionInfo(material, tier, kind));
     }
 
     private static Optional<CompressionInfo> build(Matcher matcher, boolean isRaw) {

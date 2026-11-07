@@ -762,7 +762,11 @@ public final class SiaoSelfTest {
                 copperVariantsWithoutTooltip + " 个算不出");
         var stairInfo = CompressionInfo.parse(net.minecraft.resources.ResourceLocation.parse(
                 "siao:oxidized_compressed_1x_copper_stairs_waxed"));
-        check("铜：氧化涂蜡楼梯 = 81 个铜锭",
+        var worst = CompressionInfo.parse(net.minecraft.resources.ResourceLocation.parse(
+                "siao:weathered_compressed_9x_apple_netherite_chiseled_waxed"));
+        check("变种解析：九重苹果下界合金雕纹块 = 9^9 × 9",
+                worst.isPresent() && worst.get().equivalents() == 3_486_784_401L,
+                worst.map(info -> info.equivalents() + "").orElse("解析失败"));        check("铜：氧化涂蜡楼梯 = 81 个铜锭",
                 stairInfo.isPresent() && stairInfo.get().equivalents() == 81L,
                 stairInfo.map(info -> info.equivalents() + "").orElse("解析失败"));
     }
