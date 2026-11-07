@@ -210,6 +210,7 @@ public final class SiaoSelfTest {
         singularityRouteCases(server);
         slotMatrixCases(server);
         compressorPriorityCases(server);
+        creativeTabCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
@@ -461,6 +462,22 @@ public final class SiaoSelfTest {
         check("压缩机优先级：装块模式下 9 个压缩煤 → 煤块",
                 packed.is(SiaoBlocks.unitBlock(Material.COAL, 1).get().asItem()), describe(packed));
         machine.togglePackingMode();
+    }
+    /** 创造栏分类：每种类别都要有东西，而且加起来等于全部方块。 */
+    private static void creativeTabCases(MinecraftServer server) {
+        int[] counts = new int[4];
+        for (var item : SiaoItems.blockItems()) {
+            String path = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item.get()).getPath();
+            counts[SiaoCreativeTabs.tabOf(path)]++;
+        }
+        check("创造栏：方块页非空", counts[1] > 100, counts[1] + " 项");
+        check("创造栏：整块形状页非空", counts[2] > 100, counts[2] + " 项");
+        check("创造栏：楼梯台阶页非空", counts[3] > 100, counts[3] + " 项");
+        check("创造栏：三页加起来等于全部方块",
+                counts[1] + counts[2] + counts[3] == SiaoItems.blockItems().size(),
+                counts[1] + "+" + counts[2] + "+" + counts[3] + " vs " + SiaoItems.blockItems().size());
+        SiaoMod.LOGGER.info("[SIAO-TEST] 创造栏分页：方块 {} / 形状 {} / 楼梯台阶 {}",
+                counts[1], counts[2], counts[3]);
     }
     /** 奇点两条路线按配置互斥。 */
     private static void singularityRouteCases(MinecraftServer server) {
