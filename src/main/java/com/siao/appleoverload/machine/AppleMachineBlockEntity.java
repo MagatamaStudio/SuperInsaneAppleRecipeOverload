@@ -213,7 +213,16 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
      * <p>由配置器右键（指定面）/ 界面按钮（玩家所站的面）共同调用。</p>
      */
     public SideMode cycleSide(Direction face) {
-        SideMode next = sides[face.ordinal()].next();
+        return cycleSide(face, false);
+    }
+
+    /**
+     * 切某个面的通行规则。
+     *
+     * @param backwards true 时反向循环（配置器潜行右键）
+     */
+    public SideMode cycleSide(Direction face, boolean backwards) {
+        SideMode next = backwards ? sides[face.ordinal()].previous() : sides[face.ordinal()].next();
         sides[face.ordinal()] = next;
         setChanged();
         return next;

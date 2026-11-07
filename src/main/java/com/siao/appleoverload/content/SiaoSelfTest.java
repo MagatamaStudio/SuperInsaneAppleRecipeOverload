@@ -522,6 +522,16 @@ public final class SiaoSelfTest {
         check("配置器：其他面不受影响",
                 machine.sideMode(Direction.SOUTH) == SideMode.BOTH, machine.sideMode(Direction.SOUTH).name());
 
+        // 潜行右键 = 反向循环
+        machine.setSideMode(Direction.UP, SideMode.BOTH);
+        check("配置器：潜行右键反向循环（双向 → 封闭）",
+                machine.cycleSide(Direction.UP, true) == SideMode.NONE, machine.sideMode(Direction.UP).name());
+        check("配置器：反向再走三步回到双向",
+                machine.cycleSide(Direction.UP, true) == SideMode.OUTPUT
+                        && machine.cycleSide(Direction.UP, true) == SideMode.INPUT
+                        && machine.cycleSide(Direction.UP, true) == SideMode.BOTH,
+                machine.sideMode(Direction.UP).name());
+
         // 回归：vanilla 的调用顺序是 block.useItemOn -> block.useWithoutItem -> item.useOn，
         // 机器若在 useWithoutItem 里 consume（开界面），配置器就永远轮不到。
         net.neoforged.neoforge.common.util.FakePlayer fake =

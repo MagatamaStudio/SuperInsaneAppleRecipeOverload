@@ -45,6 +45,16 @@ public enum SideMode implements StringRepresentable {
         };
     }
 
+    /** 反着循环：封闭 → 仅输出 → 仅输入 → 双向 → 封闭（配置器潜行右键用）。 */
+    public SideMode previous() {
+        return switch (this) {
+            case BOTH -> NONE;
+            case INPUT -> BOTH;
+            case OUTPUT -> INPUT;
+            case NONE -> OUTPUT;
+        };
+    }
+
     public boolean allowsInsert() {
         return this == BOTH || this == INPUT;
     }

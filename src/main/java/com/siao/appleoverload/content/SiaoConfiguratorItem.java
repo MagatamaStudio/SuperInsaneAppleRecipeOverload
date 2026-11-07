@@ -34,22 +34,18 @@ public class SiaoConfiguratorItem extends Item {
         if (player == null) {
             return InteractionResult.PASS;
         }
-        // 潜行时打开界面（和 Mek 一致）。注意潜行时 vanilla 会跳过
-        // block.useWithoutItem，所以这里必须自己处理
-        if (player.isShiftKeyDown()) {
-            if (level.isClientSide) {
-                return InteractionResult.SUCCESS;
-            }
-            player.openMenu(machine, context.getClickedPos());
-            return InteractionResult.CONSUME;
-        }
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
 
+        // 右键 = 正向循环；潜行右键 = 反向循环。
+        // 之前潜行是「打开界面」，但那个约定在 MC 里并不存在 ——
+        // 正常右键开界面才是玩家的直觉，所以改成反向循环。
         Direction face = context.getClickedFace();
-        SideMode next = machine.cycleSide(face);
-        player.displayClientMessage(Component.literal(faceName(face) + "面 → " + next.zh()), true);
+        boolean backwards = player.isShiftKeyDown();
+        SideMode next = machine.cycleSide(face, backwards);
+        player.displayClientMessage(Component.literal(
+                faceName(face) + "面 → " + next.zh() + (backwards ? "（反向）" : "")), true);
         return InteractionResult.CONSUME;
     }
 
