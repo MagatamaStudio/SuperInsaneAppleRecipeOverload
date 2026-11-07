@@ -33,9 +33,12 @@ public class SiaoEmiPlugin implements EmiPlugin {
         registry.addWorkstation(COMPRESSION,
                 EmiStack.of(SiaoBlocks.machine(MachineKind.COMPRESSOR).get()));
 
+        int count = 0;
         for (RecipeHolder<?> holder : registry.getRecipeManager()
                 .getAllRecipesFor(SiaoRecipeTypes.COMPRESSION.get())) {
             registry.addRecipe(new CompressionEmiRecipe(holder));
+            count++;
         }
+        SiaoMod.LOGGER.info("[SIAO-EMI] 注册 {} 条压缩配方到 EMI", count);
     }
 }
