@@ -211,6 +211,7 @@ public final class SiaoSelfTest {
         slotMatrixCases(server);
         compressorPriorityCases(server);
         creativeTabCases(server);
+        craftingTypeCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
@@ -480,6 +481,27 @@ public final class SiaoSelfTest {
                 total + " vs " + SiaoItems.blockItems().size());
         SiaoMod.LOGGER.info("[SIAO-TEST] 创造栏分页：方块 {} / 切制 {} / 磨制 {} / 格栅 {} / 雕纹 {} / 楼梯台阶 {}",
                 counts[1], counts[2], counts[3], counts[4], counts[5], counts[6]);
+    }
+    /**
+     * 回归：所有声明自己是 CRAFTING 类型的 siao 配方，必须真的实现 CraftingRecipe。
+     *
+     * <p>EMI 的 VanillaPlugin 会把 CRAFTING 类型的配方强转成 CraftingRecipe，
+     * 混沌苹果之前只实现 Recipe 就声明了 CRAFTING，直接抛 ClassCastException，
+     * 导致 EMI 整个原版合成分类加载失败。</p>
+     */
+    private static void craftingTypeCases(MinecraftServer server) {
+        String offender = null;
+        for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
+            if (!holder.value().getType().equals(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
+                continue;
+            }
+            if (!(holder.value() instanceof net.minecraft.world.item.crafting.CraftingRecipe)) {
+                if (offender == null) {
+                    offender = holder.id() + " (" + holder.value().getClass().getSimpleName() + ")";
+                }
+            }
+        }
+        check("配方类型：CRAFTING 类型必须实现 CraftingRecipe", offender == null, offender);
     }
     /** 奇点两条路线按配置互斥。 */
     private static void singularityRouteCases(MinecraftServer server) {

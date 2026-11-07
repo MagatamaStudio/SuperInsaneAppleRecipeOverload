@@ -7,7 +7,9 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -31,7 +33,7 @@ import net.minecraft.world.level.Level;
  * 不违反 L12：「不能手搓」约束的是<b>压缩链</b>，混沌苹果本来就是把两个附魔件
  * 合到一起，属于合成行为。</p>
  */
-public class ChaosAppleRecipe implements Recipe<CraftingInput> {
+public class ChaosAppleRecipe implements CraftingRecipe {
 
     public ChaosAppleRecipe() {
     }
@@ -80,10 +82,9 @@ public class ChaosAppleRecipe implements Recipe<CraftingInput> {
         return SiaoRecipes.CHAOS_APPLE.get();
     }
 
-    /** 仍然是合成配方类型，所以工作台能识别它。 */
     @Override
-    public RecipeType<?> getType() {
-        return RecipeType.CRAFTING;
+    public CraftingBookCategory category() {
+        return CraftingBookCategory.MISC;
     }
 
     @Override
