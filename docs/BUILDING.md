@@ -138,3 +138,14 @@ CI 里 grep 的是纯 ASCII 的 `RESULT pass=N fail=0`，因为日志文件编�
 | 首次构建要反编译 | MDG 跑 NeoForm 流水线约 90 秒，产物在 `~/.gradle/caches/neoformruntime/intermediate_results`（约 200 MB，本地生成非下载） |
 | 下划线开头的配方文件名会被**静默跳过** | 不加载也不报错。排查时别拿 `_test_xxx.json` 当样本，会得到假阴性 |
 | `run/logs/latest.log` 是本机 ANSI 代码页（GBK） | 用 UTF-8 编辑器打开，自己打的中文日志会乱码。搜英文标记（`SIAO`、`SIAO-TEST`、`Parsing error`）就好，别以为日志坏了 |
+
+
+## 语言文件
+
+gen_assets.py 只生成 zh_cn / n_us。日文由 	ools/gen_lang_ja.py 从中日词元映射生成，**必须在 gen_assets 之后跑**：
+
+``` 
+python tools/gen_assets.py
+python tools/gen_recipes.py
+python tools/gen_lang_ja.py
+```
