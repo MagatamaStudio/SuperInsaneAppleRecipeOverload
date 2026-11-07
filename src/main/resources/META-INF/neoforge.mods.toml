@@ -10,8 +10,15 @@ displayName = "${mod_name}"
 authors = "${mod_authors}"
 description = '''
 Everything can be compressed. Even the apple. Especially the apple.
-九个苹果压成一个，一直压到九重，再拿去换一根木棍。
+
+九个苹果压成一个，一直压到九重（387,420,489 个苹果），最后拿去合一根普通的木棍。
+压缩链只能由机器完成，工作台做不出来。
+
+Five machines, 10,548 blocks, AE2 integration, JEI/EMI support.
+中文 / English / 日本語
 '''
+logoFile = "logo.png"
+displayURL = "https://github.com/MagatamaStudio/SuperInsaneAppleRecipeOverload"
 
 [[dependencies.${mod_id}]]
 modId = "neoforge"
