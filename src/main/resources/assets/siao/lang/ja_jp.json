@@ -10561,6 +10561,7 @@
   "block.siao.weathered_compressed_9x_redstone_slab_waxed": "蝋付けされた風化した九重圧縮レッドストーンハーフブロック",
   "block.siao.weathered_compressed_9x_redstone_stairs": "風化した九重圧縮レッドストーン階段",
   "block.siao.weathered_compressed_9x_redstone_stairs_waxed": "蝋付けされた風化した九重圧縮レッドストーン階段",
+  "emi.category.siao.compression": "圧縮（机器）",
   "item.siao.anchor_upgrade": "アンカーアップグレード",
   "item.siao.apple_copper_alloy": "リンゴ銅合金",
   "item.siao.apple_diamond_alloy": "リンゴダイヤモンド合金",
@@ -10797,6 +10798,11 @@
   "side.siao.input": "入力のみ",
   "side.siao.none": "閉鎖",
   "side.siao.output": "出力のみ",
+  "tag.siao.compressed_blocks": "圧縮方ブロック",
+  "tag.siao.compressed_units": "圧縮单位",
+  "tag.siao.machines": "机器",
+  "tag.siao.specials": "特殊物品",
+  "tag.siao.upgrades": "机器升级",
   "tooltip.siao.equivalent": "%s 個の%sに相当",
   "tooltip.siao.side_button": "点击切换「你站的这一面」的物品通行规则"
 }

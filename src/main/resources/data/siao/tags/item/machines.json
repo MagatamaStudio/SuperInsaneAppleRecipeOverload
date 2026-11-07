@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "siao:apple_centrifuge",
+    "siao:apple_compressor",
+    "siao:apple_enchanter",
+    "siao:apple_generator",
+    "siao:apple_orchard"
+  ]
+}

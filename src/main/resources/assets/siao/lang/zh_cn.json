@@ -10561,6 +10561,7 @@
   "block.siao.weathered_compressed_9x_redstone_slab_waxed": "涂蜡锈蚀九重压缩红石台阶",
   "block.siao.weathered_compressed_9x_redstone_stairs": "锈蚀九重压缩红石楼梯",
   "block.siao.weathered_compressed_9x_redstone_stairs_waxed": "涂蜡锈蚀九重压缩红石楼梯",
+  "emi.category.siao.compression": "压缩（机器）",
   "item.siao.anchor_upgrade": "锚定升级",
   "item.siao.apple_copper_alloy": "苹果铜合金",
   "item.siao.apple_diamond_alloy": "苹果钻石合金",
@@ -10797,6 +10798,11 @@
   "side.siao.input": "仅输入",
   "side.siao.none": "封闭",
   "side.siao.output": "仅输出",
+  "tag.siao.compressed_blocks": "压缩方块",
+  "tag.siao.compressed_units": "压缩单位",
+  "tag.siao.machines": "机器",
+  "tag.siao.specials": "特殊物品",
+  "tag.siao.upgrades": "机器升级",
   "tooltip.siao.equivalent": "相当于 %s 个%s",
   "tooltip.siao.side_button": "点击切换「你站的这一面」的物品通行规则"
 }

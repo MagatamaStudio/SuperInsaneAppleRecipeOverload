@@ -1159,6 +1159,28 @@ def main() -> None:
                          (p.stem for p in (ROOT / "src/main/resources/assets/siao/blockstates").glob("*.json")))
     write_json(tag_dir / "compressed_units.json", {"replace": False, "values": unit_items})
     write_json(tag_dir / "compressed_blocks.json", {"replace": False, "values": block_items})
+
+    # EMI 会警告「没有代表性标签的物品」，所以每个物品都要至少进一个 tag
+    upgrade_items = sorted(f"{MOD_ID}:{k[len('item.siao.'):]}" for k in zh_lang
+                           if k.startswith("item.siao.") and k.endswith("_upgrade"))
+    machine_items = sorted(f"{MOD_ID}:apple_{m[0]}" for m in MACHINES)
+    special_ids = [item_id for item_id, _, _, _ in specials] + ["configurator"]
+    special_items = sorted(f"{MOD_ID}:{i}" for i in special_ids)
+    write_json(tag_dir / "upgrades.json", {"replace": False, "values": upgrade_items})
+    write_json(tag_dir / "machines.json", {"replace": False, "values": machine_items})
+    write_json(tag_dir / "specials.json", {"replace": False, "values": special_items})
+
+    # 标签的翻译，否则 EMI 报「Untranslated tag #」
+    for tag_id, zh, en in (("compressed_units", "压缩单位", "Compressed Units"),
+                           ("compressed_blocks", "压缩方块", "Compressed Blocks"),
+                           ("upgrades", "机器升级", "Machine Upgrades"),
+                           ("machines", "机器", "Machines"),
+                           ("specials", "特殊物品", "Special Items")):
+        zh_lang[f"tag.{MOD_ID}.{tag_id}"] = zh
+        en_lang[f"tag.{MOD_ID}.{tag_id}"] = en
+    # EMI 的 JEI 兼容层也要一份 category 翻译
+    zh_lang["emi.category.siao.compression"] = "压缩（机器）"
+    en_lang["emi.category.siao.compression"] = "Compression"
     # ---- 方块标签：从实际生成的 blockstate 反推，保证一个不漏 ------------------
     # C/D 线现在有一万多个方块，靠手工收集 block_ids 一定会漏
     tags_dir2 = ROOT / "src" / "main" / "resources" / "data" / "minecraft" / "tags" / "block" / "mineable"

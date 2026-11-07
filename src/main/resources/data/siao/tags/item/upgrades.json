@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "siao:anchor_upgrade",
+    "siao:energy_upgrade",
+    "siao:fission_upgrade",
+    "siao:overclock_upgrade",
+    "siao:parallel_upgrade",
+    "siao:quantum_upgrade",
+    "siao:speed_upgrade"
+  ]
+}

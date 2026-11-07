@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "siao:apple_copper_alloy",
+    "siao:apple_diamond_alloy",
+    "siao:apple_gold_alloy",
+    "siao:apple_iron_alloy",
+    "siao:apple_netherite_alloy",
+    "siao:chaos_apple",
+    "siao:configurator",
+    "siao:configurator",
+    "siao:raw_apple_gold",
+    "siao:singularity",
+    "siao:singularity_shard"
+  ]
+}
