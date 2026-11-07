@@ -2,6 +2,7 @@ package com.siao.appleoverload.machine;
 
 import com.siao.appleoverload.config.SiaoConfig;
 import com.siao.appleoverload.content.Material;
+import com.siao.appleoverload.content.SiaoCompressedBlockItem;
 import com.siao.appleoverload.content.SiaoComponents;
 import com.siao.appleoverload.content.SiaoCompressedItem;
 import com.siao.appleoverload.content.SiaoItems;
@@ -37,6 +38,7 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -73,6 +75,9 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
 
     /** 下标 = {@link Direction#ordinal()}。 */
     private final SideMode[] sides = defaultSides();
+
+    /** 压缩机的装块模式：开时 9 个单位优先装成块，而不是升重。 */
+    private boolean packingMode;
 
     private int progress;
     private int maxProgress = 1;
@@ -117,6 +122,17 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
     }
 
     // ---- 对外接口 -----------------------------------------------------------
+
+    public boolean packingMode() {
+        return packingMode;
+    }
+
+    /** 切换装块模式，返回新值。只有压缩机会用。 */
+    public boolean togglePackingMode() {
+        packingMode = !packingMode;
+        setChanged();
+        return packingMode;
+    }
 
     public MachineKind machineKind() {
         return machineKind;
@@ -459,10 +475,35 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
      * <p>配方现在属于自定义类型 {@code siao:compression}，<b>工作台看不到</b> ——
      * 这就是原需求「这些物品不能手搓，必须用机器」的落地方式。</p>
      */
+    /**
+     * 配方优先级：数字小的先试。
+     *
+     * <p>普通模式：升重(0) → 拆分(1) → 装块(2)。
+     * 装块模式：装块(0) → 升重(1) → 拆分(2)。</p>
+     */
+    private int recipeRank(SiaoCompressionRecipe recipe) {
+        boolean resultIsBlock = recipe.result().getItem() instanceof SiaoCompressedBlockItem;
+        boolean nineToOne = recipe.count() == 9;
+        if (packingMode) {
+            if (nineToOne && resultIsBlock) {
+                return 0;
+            }
+            return nineToOne ? 1 : 2;
+        }
+        if (nineToOne && !resultIsBlock) {
+            return 0;
+        }
+        return nineToOne ? 2 : 1;
+    }
     private boolean runCompressor() {
         ItemStack first = inventory.getStackInSlot(activeInputSlot());
         CraftingInput input = craftingInput();
-        for (SiaoCompressionRecipe recipe : CompressionIndex.candidates(level.getRecipeManager(), first)) {
+        // ⚠️ 9 个同一物品会同时匹配「升重」和「装块」两条配方，必须定优先级，
+        // 否则机器取先注册的那条 —— 之前就是这样把煤压成了煤块。
+        List<SiaoCompressionRecipe> candidates =
+                new ArrayList<>(CompressionIndex.candidates(level.getRecipeManager(), first));
+        candidates.sort(Comparator.comparingInt(this::recipeRank));
+        for (SiaoCompressionRecipe recipe : candidates) {
             if (!recipe.matches(input, level)) {
                 continue;
             }
@@ -728,6 +769,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         tag.putInt("progress", progress);
         tag.putInt("saplingProgress", saplingProgress);
         tag.putInt("sides", packedSides());
+        tag.putBoolean("packingMode", packingMode);
     }
 
     @Override
@@ -740,6 +782,7 @@ public class AppleMachineBlockEntity extends BlockEntity implements MenuProvider
         energy.clampToCapacity();
         progress = tag.getInt("progress");
         saplingProgress = tag.getInt("saplingProgress");
+        packingMode = tag.getBoolean("packingMode");
         if (tag.contains("sides")) {
             unpackSides(tag.getInt("sides"));
         }

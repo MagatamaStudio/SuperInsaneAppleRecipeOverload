@@ -40,6 +40,14 @@ public class SiaoConfiguratorItem extends Item {
 
         // 蹲不蹲都做同一件事：正向循环。
         // 之前蹲下是反向循环，结果同一个面同一个物品有两种结果，玩家没法预期。
+        // 对压缩机潜行右键 = 切换装块模式（9 个单位优先装成块而不是升重）
+        if (player.isShiftKeyDown() && machine.machineKind() == com.siao.appleoverload.machine.MachineKind.COMPRESSOR) {
+            boolean on = machine.togglePackingMode();
+            player.displayClientMessage(Component.literal(
+                    "压缩机：" + (on ? "装块模式 开" : "升重模式（默认）")), true);
+            return InteractionResult.CONSUME;
+        }
+
         Direction face = context.getClickedFace();
         SideMode before = machine.sideMode(face);
         SideMode after = machine.cycleSide(face);

@@ -209,6 +209,7 @@ public final class SiaoSelfTest {
         perTierCases(server);
         singularityRouteCases(server);
         slotMatrixCases(server);
+        compressorPriorityCases(server);
         ae2Cases(server);
         phase6Cases(server, registries);
         copperCases();
@@ -410,6 +411,56 @@ public final class SiaoSelfTest {
             SiaoMod.LOGGER.info("[SIAO-TEST] 槽位矩阵 {}（{}槽）：{}",
                     kind.id(), handler.getSlots(), row);
         }
+    }
+    /**
+     * 回归：9 个压缩煤同时匹配「升重」和「装块」，机器必须选升重。
+     *
+     * <p>之前候选没排序，取的是先注册的装块配方 —— 玩家压煤得到的是煤块。</p>
+     */
+    private static void compressorPriorityCases(MinecraftServer server) {
+        AppleMachineBlockEntity machine = place(server, MachineKind.COMPRESSOR, new BlockPos(40, 220, 0));
+        machine.fillEnergy();
+        ItemStack coalUnit = new ItemStack(SiaoItems.unit(Material.COAL, 1).get());
+        for (int slot = 0; slot < 9; slot++) {
+            ((net.neoforged.neoforge.items.IItemHandlerModifiable) machine.getItemHandler()).setStackInSlot(slot, coalUnit.copy());
+        }
+        for (int tick = 0; tick < 200; tick++) {
+            machine.tick();
+        }
+        ItemStack produced = ItemStack.EMPTY;
+        for (int slot = machine.machineKind().outputStart();
+             slot < machine.machineKind().outputStart() + machine.machineKind().outputSlots(); slot++) {
+            if (!machine.getItemHandler().getStackInSlot(slot).isEmpty()) {
+                produced = machine.getItemHandler().getStackInSlot(slot);
+                break;
+            }
+        }
+        check("压缩机优先级：9 个压缩煤 → 二重压缩煤（不是煤块）",
+                produced.is(SiaoItems.unit(Material.COAL, 2).get()), describe(produced));
+
+        // 切到装块模式后应该产出煤块
+        machine.togglePackingMode();
+        for (int slot = 0; slot < 9; slot++) {
+            ((net.neoforged.neoforge.items.IItemHandlerModifiable) machine.getItemHandler()).setStackInSlot(slot, coalUnit.copy());
+        }
+        for (int slot = machine.machineKind().outputStart();
+             slot < machine.machineKind().outputStart() + machine.machineKind().outputSlots(); slot++) {
+            ((net.neoforged.neoforge.items.IItemHandlerModifiable) machine.getItemHandler()).setStackInSlot(slot, ItemStack.EMPTY);
+        }
+        for (int tick = 0; tick < 200; tick++) {
+            machine.tick();
+        }
+        ItemStack packed = ItemStack.EMPTY;
+        for (int slot = machine.machineKind().outputStart();
+             slot < machine.machineKind().outputStart() + machine.machineKind().outputSlots(); slot++) {
+            if (!machine.getItemHandler().getStackInSlot(slot).isEmpty()) {
+                packed = machine.getItemHandler().getStackInSlot(slot);
+                break;
+            }
+        }
+        check("压缩机优先级：装块模式下 9 个压缩煤 → 煤块",
+                packed.is(SiaoBlocks.unitBlock(Material.COAL, 1).get().asItem()), describe(packed));
+        machine.togglePackingMode();
     }
     /** 奇点两条路线按配置互斥。 */
     private static void singularityRouteCases(MinecraftServer server) {
