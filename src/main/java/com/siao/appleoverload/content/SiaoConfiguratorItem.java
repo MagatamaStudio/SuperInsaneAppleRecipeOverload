@@ -16,7 +16,7 @@ import net.minecraft.world.level.Level;
  * <p>对着机器的**某个面**右键，就切这个面的通行规则：
  * 双向 → 仅输入 → 仅输出 → 封闭 → 双向。</p>
  *
- * <p>潜行右键则走方块自己的逻辑（打开界面），和 Mek 的配置器一致。</p>
+ * <p>蹲不蹲都一样，永远是正向循环；想打开界面就空手右键。</p>
  */
 public class SiaoConfiguratorItem extends Item {
 
@@ -38,14 +38,14 @@ public class SiaoConfiguratorItem extends Item {
             return InteractionResult.SUCCESS;
         }
 
-        // 右键 = 正向循环；潜行右键 = 反向循环。
-        // 之前潜行是「打开界面」，但那个约定在 MC 里并不存在 ——
-        // 正常右键开界面才是玩家的直觉，所以改成反向循环。
+        // 蹲不蹲都做同一件事：正向循环。
+        // 之前蹲下是反向循环，结果同一个面同一个物品有两种结果，玩家没法预期。
         Direction face = context.getClickedFace();
-        boolean backwards = player.isShiftKeyDown();
-        SideMode next = machine.cycleSide(face, backwards);
+        SideMode before = machine.sideMode(face);
+        SideMode after = machine.cycleSide(face);
+        // 提示带上「从什么变成什么」，比只报新状态好确认
         player.displayClientMessage(Component.literal(
-                faceName(face) + "面 → " + next.zh() + (backwards ? "（反向）" : "")), true);
+                faceName(face) + "面：" + before.zh() + " → " + after.zh()), true);
         return InteractionResult.CONSUME;
     }
 
