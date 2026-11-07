@@ -53,6 +53,7 @@ dependencies {
     compileOnly "org.appliedenergistics:appliedenergistics2:19.2.18:api"
     // JEI 只在开发期编译插件用；玩家侧是可选的，没装 JEI 时插件类不会被加载
     compileOnly files("gradle/offline-repo/jei/jei-1.21.1-neoforge-19.8.4.113.jar")
+    compileOnly files("gradle/offline-repo/jei/emi-1.1.24.jar")
 }
 
 tasks.withType(ProcessResources).configureEach {
