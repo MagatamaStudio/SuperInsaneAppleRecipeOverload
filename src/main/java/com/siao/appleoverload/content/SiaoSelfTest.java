@@ -465,19 +465,21 @@ public final class SiaoSelfTest {
     }
     /** 创造栏分类：每种类别都要有东西，而且加起来等于全部方块。 */
     private static void creativeTabCases(MinecraftServer server) {
-        int[] counts = new int[4];
+        int[] counts = new int[7];
         for (var item : SiaoItems.blockItems()) {
             String path = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item.get()).getPath();
             counts[SiaoCreativeTabs.tabOf(path)]++;
         }
-        check("创造栏：方块页非空", counts[1] > 100, counts[1] + " 项");
-        check("创造栏：整块形状页非空", counts[2] > 100, counts[2] + " 项");
-        check("创造栏：楼梯台阶页非空", counts[3] > 100, counts[3] + " 项");
-        check("创造栏：三页加起来等于全部方块",
-                counts[1] + counts[2] + counts[3] == SiaoItems.blockItems().size(),
-                counts[1] + "+" + counts[2] + "+" + counts[3] + " vs " + SiaoItems.blockItems().size());
-        SiaoMod.LOGGER.info("[SIAO-TEST] 创造栏分页：方块 {} / 形状 {} / 楼梯台阶 {}",
-                counts[1], counts[2], counts[3]);
+        int total = 0;
+        for (int tab = 1; tab <= 6; tab++) {
+            check("创造栏：第 " + tab + " 页非空", counts[tab] > 100, counts[tab] + " 项");
+            total += counts[tab];
+        }
+        check("创造栏：六页加起来等于全部方块",
+                total == SiaoItems.blockItems().size(),
+                total + " vs " + SiaoItems.blockItems().size());
+        SiaoMod.LOGGER.info("[SIAO-TEST] 创造栏分页：方块 {} / 切制 {} / 磨制 {} / 格栅 {} / 雕纹 {} / 楼梯台阶 {}",
+                counts[1], counts[2], counts[3], counts[4], counts[5], counts[6]);
     }
     /** 奇点两条路线按配置互斥。 */
     private static void singularityRouteCases(MinecraftServer server) {

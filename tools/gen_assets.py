@@ -697,7 +697,10 @@ def main() -> None:
     zh_lang: dict[str, str] = {
         "itemGroup.siao.main": "超级疯狂的苹果配方超载",
     "itemGroup.siao.blocks": "压缩方块",
-    "itemGroup.siao.shapes": "切制与雕纹",
+    "itemGroup.siao.cut": "切制方块",
+    "itemGroup.siao.polished": "磨制方块",
+    "itemGroup.siao.grate": "格栅方块",
+    "itemGroup.siao.chiseled": "雕纹方块",
     "itemGroup.siao.stairs": "楼梯与台阶",
         "tooltip.siao.equivalent": "相当于 %s 个%s",
         "jei.siao.compression": "压缩（机器）",
