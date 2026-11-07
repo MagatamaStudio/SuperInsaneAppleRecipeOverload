@@ -76,6 +76,13 @@ python tools/gen_lang_ja.py    # 日文（必须在 gen_assets 之后）
 覆盖配方、附魔、五台机器、槽位矩阵、侧配置、氧化链、AE2 三层、发电、进度、语言。
 CI 每次提交都会在真实的 AE2 环境里跑一遍。
 
+另有**视觉测试**（30 项断言：GUI 截图 / AE2 真网格 / 平衡观测，见
+[`docs/BUILDING.md`](docs/BUILDING.md)）：
+
+```bash
+./gradlew runVisualtest --offline
+```
+
 ## 文档
 
 - [`docs/设计锁定-v1.md`](docs/设计锁定-v1.md) — 设计决策与阶段记录

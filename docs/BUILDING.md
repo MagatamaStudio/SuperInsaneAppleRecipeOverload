@@ -128,6 +128,30 @@ CI 里 grep 的是纯 ASCII 的 `RESULT pass=N fail=0`，因为日志文件编�
 
 ---
 
+## 视觉测试（GUI 截图 / AE2 真网格 / 平衡观测）
+
+`SiaoVisualTest.java` 会真的开一个客户端进测试世界，跑完 30 项断言、
+截图、写 `run/siao-visual/report.md` 后自动退出：
+
+```powershell
+# 前置：run/mods 里要有 AE2 和 EMI；测试世界存在（复制自「新的世界」）
+Copy-Item -Recurse "run\saves\新的世界" "run\saves\siao_visualtest" -Force
+.\gradlew.bat runVisualtest --offline
+```
+
+覆盖：7 个机器 GUI 开屏截图、AE2 真网格直连（推样板、E2E 压锭、产物回网）、
+平衡数字（60 tick/苹果、九重 3.87 亿、能量闭环）、5 个发布交付物（创造页签、
+压缩机优先级、配置器循环切面、楼梯/台阶命名、EMI 分类）。
+
+要点（多轮运行踩过的坑）：
+
+- **必须 `--offline`**；游戏 cwd = `run/`，日志 GBK 编码，监控用 `tail -F`
+- 每轮跑前重置世界和截图目录：`rm -rf run/siao-visual run/saves/siao_visualtest`（或 PowerShell `Remove-Item -Recurse -Force`）再复制
+- 测试窗口会在后台跑，别依赖它可见；harness 首 tick 已关 vsync、限 30 FPS、静音 MouseHandler（不抢系统光标）
+- 基线：`通过 30 / 失败 0`；断言名以 `SIAO-VISUAL` 前缀打日志
+
+---
+
 ## 环境坑备忘
 
 | 坑 | 说明 |
